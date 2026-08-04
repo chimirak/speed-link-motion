@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/speedlink-logo.png.asset.json";
+import logo from "@/assets/speedlink-mark.png.asset.json";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -47,8 +47,7 @@ export function SiteNav() {
               alt=""
               width={40}
               height={40}
-              className="h-9 w-9 shrink-0 rounded-lg object-cover"
-              style={{ objectPosition: "31% 55%", transform: "scale(2.6)" }}
+                className="h-8 w-8 shrink-0 object-contain"
             />
             <span className="min-w-0 truncate font-display text-sm font-extrabold tracking-tight uppercase">
               Speed<span className="text-primary">Link</span>

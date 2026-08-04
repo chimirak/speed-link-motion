@@ -1,5 +1,5 @@
 import { Mail, MapPin } from "lucide-react";
-import logo from "@/assets/speedlink-logo.png.asset.json";
+import logo from "@/assets/speedlink-mark.png.asset.json";
 
 const columns = [
   {
@@ -35,8 +35,7 @@ export function SiteFooter() {
                 width={40}
                 height={40}
                 loading="lazy"
-                className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                style={{ objectPosition: "31% 55%", transform: "scale(2.6)" }}
+                className="h-9 w-9 shrink-0 object-contain"
               />
               <span className="font-display text-base font-extrabold tracking-tight uppercase">
                 Speed<span className="text-primary">Link</span> Courier
