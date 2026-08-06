@@ -69,13 +69,20 @@ function Home() {
       <main id="main">
         <Hero />
         <TrackingSearch />
+        <Stats />
         <Services />
         <WhyUs />
-        <Stats />
+        <BusinessSolutions />
+        <AirFreight />
+        <FlightBooking />
+        <WorldwideCoverage />
         <Process />
         <Testimonials />
+        <Partners />
+        <News />
         <CallToAction />
       </main>
+
       <SiteFooter />
     </>
   );
