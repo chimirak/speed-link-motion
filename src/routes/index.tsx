@@ -2,13 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site/site-nav";
 import { Hero } from "@/components/site/hero";
 import { TrackingSearch } from "@/components/site/tracking-search";
+import { Stats } from "@/components/site/stats";
 import { Services } from "@/components/site/services";
 import { WhyUs } from "@/components/site/why-us";
-import { Stats } from "@/components/site/stats";
+import { BusinessSolutions } from "@/components/site/business-solutions";
+import { AirFreight } from "@/components/site/air-freight";
+import { FlightBooking } from "@/components/site/flight-booking";
+import { WorldwideCoverage } from "@/components/site/worldwide-coverage";
 import { Process } from "@/components/site/process";
 import { Testimonials } from "@/components/site/testimonials";
+import { Partners } from "@/components/site/partners";
+import { News } from "@/components/site/news";
 import { CallToAction } from "@/components/site/call-to-action";
 import { SiteFooter } from "@/components/site/site-footer";
+
 
 const title = "Speed Link Courier — Same-Day & Global Express Delivery";
 const description =

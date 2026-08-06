@@ -10,20 +10,17 @@ const stats = [
 
 export function Stats() {
   return (
-    <section
-      aria-label="Company statistics"
-      className="relative border-y border-border bg-[var(--gradient-ink)]"
-    >
-      <div className="grid-lines absolute inset-0 opacity-40" aria-hidden="true" />
+    <section aria-label="Company statistics" className="relative bg-ink text-ink-foreground">
+      <div className="grid-lines-ink absolute inset-0" aria-hidden="true" />
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
         <dl className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s, i) => (
             <Reveal key={s.label} delay={0.08 * i}>
-              <div className="border-l border-border pl-6">
+              <div className="border-l border-[oklch(0.9884_0_0/16%)] pl-6">
                 <dd className="numeric text-[clamp(2.5rem,6vw,4.25rem)] leading-none font-bold">
                   <Counter to={s.value} decimals={s.decimals} suffix={s.suffix} />
                 </dd>
-                <dt className="mt-4 text-xs tracking-[0.22em] text-muted-foreground uppercase">
+                <dt className="mt-4 text-[11px] tracking-[0.22em] text-ink-muted uppercase">
                   {s.label}
                 </dt>
               </div>
