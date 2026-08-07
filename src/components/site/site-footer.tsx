@@ -1,32 +1,45 @@
 import { Mail, MapPin } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import logo from "@/assets/speedlink-mark.png.asset.json";
 
 const columns = [
   {
     title: "Services",
     links: [
-      { label: "Same-day dedicated", href: "#services" },
-      { label: "International express", href: "#services" },
-      { label: "Legal & confidential", href: "#services" },
-      { label: "Pallets & freight", href: "#services" },
+      { label: "Services overview", to: "/services" },
+      { label: "Book a shipment", to: "/book" },
+      { label: "Track a shipment", to: "/tracking" },
+      { label: "Flight booking", to: "/flight-booking" },
+      { label: "Pricing", to: "/pricing" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "Why Speed Link", href: "#why" },
-      { label: "How it works", href: "#process" },
-      { label: "Track a shipment", href: "#track" },
-      { label: "Request a quote", href: "#quote" },
+      { label: "About us", to: "/about" },
+      { label: "Business solutions", to: "/solutions" },
+      { label: "Coverage", to: "/coverage" },
+      { label: "Locations", to: "/locations" },
+      { label: "Careers", to: "/careers" },
     ],
   },
-];
+  {
+    title: "Support",
+    links: [
+      { label: "Contact", to: "/contact" },
+      { label: "FAQs", to: "/faqs" },
+      { label: "Blog", to: "/blog" },
+      { label: "Privacy policy", to: "/privacy" },
+      { label: "Terms & conditions", to: "/terms" },
+    ],
+  },
+] as const;
 
 export function SiteFooter() {
   return (
-    <footer id="contact" className="relative border-t border-border bg-surface/30">
+    <footer id="contact-footer" className="relative border-t border-border bg-surface/30">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-20">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,0.8fr))_minmax(0,1.1fr)]">
           <div>
             <div className="flex min-w-0 items-center gap-2.5">
               <img
@@ -37,12 +50,15 @@ export function SiteFooter() {
                 loading="lazy"
                 className="h-9 w-9 shrink-0 object-contain"
               />
-              <span className="font-display text-base font-extrabold tracking-tight uppercase">
-                Speed<span className="text-primary">Link</span> Courier
+              <span className="font-display text-base leading-none font-extrabold tracking-tight uppercase">
+                Speed<span className="text-primary">Link</span>
+                <span className="mt-1 block text-[9px] font-semibold tracking-[0.28em] text-muted-foreground">
+                  Express Logistics
+                </span>
               </span>
             </div>
             <p className="mt-6 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Time-critical courier and freight services across the United Kingdom and 220+
+              Time-critical courier, freight and travel services across the United Kingdom and 220+
               countries worldwide.
             </p>
           </div>
@@ -55,12 +71,12 @@ export function SiteFooter() {
               <ul className="mt-5 space-y-3">
                 {col.links.map((l) => (
                   <li key={l.label}>
-                    <a
-                      href={l.href}
+                    <Link
+                      to={l.to}
                       className="text-sm text-foreground/85 transition-colors hover:text-primary"
                     >
                       {l.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -72,7 +88,7 @@ export function SiteFooter() {
             <ul className="mt-5 space-y-4 text-sm">
               <li className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
                 <MapPin className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                <address className="not-italic text-muted-foreground">
+                <address className="text-muted-foreground not-italic">
                   The Hub, Fowler Avenue
                   <br />
                   Farnborough, United Kingdom
@@ -93,7 +109,7 @@ export function SiteFooter() {
 
         <div className="mt-14 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-t border-border pt-8">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Speed Link Courier. All rights reserved.
+            © {new Date().getFullYear()} Speed Link Express Logistics. All rights reserved.
           </p>
           <p className="numeric shrink-0 text-xs tracking-widest text-muted-foreground uppercase">
             Farnborough · UK
