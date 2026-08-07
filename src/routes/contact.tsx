@@ -153,7 +153,7 @@ function Field({
   name: string;
   label: string;
   type?: string;
-  error?: string;
+  error?: string | undefined;
   full?: boolean;
 }) {
   return (
