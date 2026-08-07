@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SmoothScroll } from "@/components/motion/smooth-scroll";
 import { Toaster } from "@/components/ui/sonner";
+import { SiteNav } from "@/components/site/site-nav";
+import { SiteFooter } from "@/components/site/site-footer";
 
 function NotFoundComponent() {
   return (
@@ -79,13 +81,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Speed Link Courier — Premium UK & Global Express Delivery" },
+      { title: "Speed Link Express Logistics — UK & Global Express Delivery" },
       {
         name: "description",
         content:
-          "Speed Link Courier delivers time-critical parcels and freight across the UK and worldwide with live tracking, guaranteed timings and full insurance.",
+          "Speed Link Express Logistics delivers time-critical parcels and freight across the UK and worldwide with live tracking, guaranteed timings and full insurance.",
       },
-      { name: "author", content: "Speed Link Courier" },
+      { name: "author", content: "Speed Link Express Logistics" },
+      { property: "og:site_name", content: "Speed Link Express Logistics" },
       { name: "theme-color", content: "#0B0B0B" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -127,8 +130,18 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <SmoothScroll />
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60] focus:rounded-full focus:bg-primary focus:px-5 focus:py-3 focus:text-sm focus:text-primary-foreground"
+      >
+        Skip to content
+      </a>
+      <SiteNav />
+      <main id="main">
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </main>
+      <SiteFooter />
       <Toaster position="top-center" />
     </QueryClientProvider>
   );

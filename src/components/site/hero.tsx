@@ -62,7 +62,7 @@ export function Hero() {
               transition={{ duration: 0.9, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
             >
-              Speed Link Courier moves time-critical parcels, documents and freight with dedicated
+              Speed Link Express Logistics moves time-critical parcels, documents and freight with dedicated
               drivers, live tracking and guaranteed timings — from Farnborough to anywhere on earth.
             </motion.p>
 

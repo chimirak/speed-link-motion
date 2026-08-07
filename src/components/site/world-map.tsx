@@ -95,7 +95,7 @@ export function WorldMap() {
           preserveAspectRatio="none"
           className="absolute inset-0 size-full"
           role="img"
-          aria-label="World map showing Speed Link Courier hubs and trade lanes"
+          aria-label="World map showing Speed Link Express Logistics hubs and trade lanes"
         >
           {dots.map((d, i) => (
             <circle key={i} cx={d.x} cy={d.y} r={0.32} fill="var(--foreground)" opacity={0.22} />

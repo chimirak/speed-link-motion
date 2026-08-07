@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SiteNav } from "@/components/site/site-nav";
-import { Hero } from "@/components/site/hero";
+import { HeroSlider } from "@/components/site/hero-slider";
 import { TrackingSearch } from "@/components/site/tracking-search";
 import { Stats } from "@/components/site/stats";
 import { Services } from "@/components/site/services";
@@ -14,10 +13,9 @@ import { Testimonials } from "@/components/site/testimonials";
 import { Partners } from "@/components/site/partners";
 import { News } from "@/components/site/news";
 import { CallToAction } from "@/components/site/call-to-action";
-import { SiteFooter } from "@/components/site/site-footer";
 
 
-const title = "Speed Link Courier — Same-Day & Global Express Delivery";
+const title = "Speed Link Express Logistics — Same-Day & Global Express Delivery";
 const description =
   "Time-critical courier and freight from Farnborough to 220+ countries. Live tracking, guaranteed timings, fully insured, 24/7 human support.";
 
@@ -38,7 +36,7 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "MovingCompany",
-          name: "Speed Link Courier",
+          name: "Speed Link Express Logistics",
           description,
           email: "Speedlinkcourier6@gmail.com",
           address: {
@@ -59,31 +57,20 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <>
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60] focus:rounded-full focus:bg-primary focus:px-5 focus:py-3 focus:text-sm focus:text-primary-foreground"
-      >
-        Skip to content
-      </a>
-      <SiteNav />
-      <main id="main">
-        <Hero />
-        <TrackingSearch />
-        <Stats />
-        <Services />
-        <WhyUs />
-        <BusinessSolutions />
-        <AirFreight />
-        <FlightBooking />
-        <WorldwideCoverage />
-        <Process />
-        <Testimonials />
-        <Partners />
-        <News />
-        <CallToAction />
-      </main>
-
-      <SiteFooter />
+      <HeroSlider />
+      <TrackingSearch />
+      <Stats />
+      <Services />
+      <WhyUs />
+      <BusinessSolutions />
+      <AirFreight />
+      <FlightBooking />
+      <WorldwideCoverage />
+      <Process />
+      <Testimonials />
+      <Partners />
+      <News />
+      <CallToAction />
     </>
   );
 }

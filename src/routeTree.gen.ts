@@ -10,33 +10,232 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as BlogRouteImport } from './routes/blog'
+import { Route as BookRouteImport } from './routes/book'
+import { Route as CareersRouteImport } from './routes/careers'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CoverageRouteImport } from './routes/coverage'
+import { Route as FaqsRouteImport } from './routes/faqs'
+import { Route as FlightBookingRouteImport } from './routes/flight-booking'
+import { Route as LocationsRouteImport } from './routes/locations'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ServicesRouteImport } from './routes/services'
+import { Route as SolutionsRouteImport } from './routes/solutions'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TrackingRouteImport } from './routes/tracking'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookRoute = BookRouteImport.update({
+  id: '/book',
+  path: '/book',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersRoute = CareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoverageRoute = CoverageRouteImport.update({
+  id: '/coverage',
+  path: '/coverage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqsRoute = FaqsRouteImport.update({
+  id: '/faqs',
+  path: '/faqs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FlightBookingRoute = FlightBookingRouteImport.update({
+  id: '/flight-booking',
+  path: '/flight-booking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocationsRoute = LocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SolutionsRoute = SolutionsRouteImport.update({
+  id: '/solutions',
+  path: '/solutions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackingRoute = TrackingRouteImport.update({
+  id: '/tracking',
+  path: '/tracking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/blog': typeof BlogRoute
+  '/book': typeof BookRoute
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/coverage': typeof CoverageRoute
+  '/faqs': typeof FaqsRoute
+  '/flight-booking': typeof FlightBookingRoute
+  '/locations': typeof LocationsRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/services': typeof ServicesRoute
+  '/solutions': typeof SolutionsRoute
+  '/terms': typeof TermsRoute
+  '/tracking': typeof TrackingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/blog': typeof BlogRoute
+  '/book': typeof BookRoute
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/coverage': typeof CoverageRoute
+  '/faqs': typeof FaqsRoute
+  '/flight-booking': typeof FlightBookingRoute
+  '/locations': typeof LocationsRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/services': typeof ServicesRoute
+  '/solutions': typeof SolutionsRoute
+  '/terms': typeof TermsRoute
+  '/tracking': typeof TrackingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/blog': typeof BlogRoute
+  '/book': typeof BookRoute
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/coverage': typeof CoverageRoute
+  '/faqs': typeof FaqsRoute
+  '/flight-booking': typeof FlightBookingRoute
+  '/locations': typeof LocationsRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/services': typeof ServicesRoute
+  '/solutions': typeof SolutionsRoute
+  '/terms': typeof TermsRoute
+  '/tracking': typeof TrackingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/blog'
+    | '/book'
+    | '/careers'
+    | '/contact'
+    | '/coverage'
+    | '/faqs'
+    | '/flight-booking'
+    | '/locations'
+    | '/pricing'
+    | '/privacy'
+    | '/services'
+    | '/solutions'
+    | '/terms'
+    | '/tracking'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/about'
+    | '/blog'
+    | '/book'
+    | '/careers'
+    | '/contact'
+    | '/coverage'
+    | '/faqs'
+    | '/flight-booking'
+    | '/locations'
+    | '/pricing'
+    | '/privacy'
+    | '/services'
+    | '/solutions'
+    | '/terms'
+    | '/tracking'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/blog'
+    | '/book'
+    | '/careers'
+    | '/contact'
+    | '/coverage'
+    | '/faqs'
+    | '/flight-booking'
+    | '/locations'
+    | '/pricing'
+    | '/privacy'
+    | '/services'
+    | '/solutions'
+    | '/terms'
+    | '/tracking'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  BlogRoute: typeof BlogRoute
+  BookRoute: typeof BookRoute
+  CareersRoute: typeof CareersRoute
+  ContactRoute: typeof ContactRoute
+  CoverageRoute: typeof CoverageRoute
+  FaqsRoute: typeof FaqsRoute
+  FlightBookingRoute: typeof FlightBookingRoute
+  LocationsRoute: typeof LocationsRoute
+  PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
+  ServicesRoute: typeof ServicesRoute
+  SolutionsRoute: typeof SolutionsRoute
+  TermsRoute: typeof TermsRoute
+  TrackingRoute: typeof TrackingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +247,132 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book': {
+      id: '/book'
+      path: '/book'
+      fullPath: '/book'
+      preLoaderRoute: typeof BookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/careers': {
+      id: '/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof CareersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coverage': {
+      id: '/coverage'
+      path: '/coverage'
+      fullPath: '/coverage'
+      preLoaderRoute: typeof CoverageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faqs': {
+      id: '/faqs'
+      path: '/faqs'
+      fullPath: '/faqs'
+      preLoaderRoute: typeof FaqsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/flight-booking': {
+      id: '/flight-booking'
+      path: '/flight-booking'
+      fullPath: '/flight-booking'
+      preLoaderRoute: typeof FlightBookingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/locations': {
+      id: '/locations'
+      path: '/locations'
+      fullPath: '/locations'
+      preLoaderRoute: typeof LocationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/solutions': {
+      id: '/solutions'
+      path: '/solutions'
+      fullPath: '/solutions'
+      preLoaderRoute: typeof SolutionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tracking': {
+      id: '/tracking'
+      path: '/tracking'
+      fullPath: '/tracking'
+      preLoaderRoute: typeof TrackingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  BlogRoute: BlogRoute,
+  BookRoute: BookRoute,
+  CareersRoute: CareersRoute,
+  ContactRoute: ContactRoute,
+  CoverageRoute: CoverageRoute,
+  FaqsRoute: FaqsRoute,
+  FlightBookingRoute: FlightBookingRoute,
+  LocationsRoute: LocationsRoute,
+  PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
+  ServicesRoute: ServicesRoute,
+  SolutionsRoute: SolutionsRoute,
+  TermsRoute: TermsRoute,
+  TrackingRoute: TrackingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
