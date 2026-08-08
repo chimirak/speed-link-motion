@@ -4,8 +4,10 @@ import { generateTrackingNumber } from "@/lib/logistics";
 
 
 /** Drops undefined keys so inserts satisfy exactOptionalPropertyTypes. */
-function clean<T extends Record<string, unknown>>(obj: T): T {
-  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+function clean<T extends Record<string, unknown>>(obj: T): { [K in keyof T]-?: Exclude<T[K], undefined> } {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined),
+  ) as { [K in keyof T]-?: Exclude<T[K], undefined> };
 }
 
 export const getMyRoles = createServerFn({ method: "GET" })
