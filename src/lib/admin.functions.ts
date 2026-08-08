@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { ShipmentStatus } from "@/lib/logistics";
 
 /** Throws unless the caller holds a staff role. Uses the caller's own client (RLS). */
 async function assertStaff(context: { supabase: any; userId: string }) {
@@ -71,7 +72,7 @@ export const getAdminCustomers = createServerFn({ method: "GET" })
 export const updateShipmentStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: { shipmentId: string; status: string; location?: string; description?: string }) => d,
+    (d: { shipmentId: string; status: ShipmentStatus; location?: string; description?: string }) => d,
   )
   .handler(async ({ data, context }) => {
     await assertStaff(context);
