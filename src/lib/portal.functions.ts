@@ -25,7 +25,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
 
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { full_name?: string; phone?: string; company?: string }) => d)
+  .inputValidator((d: { full_name?: string | undefined; phone?: string | undefined; company?: string }) => d)
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("profiles")
@@ -92,30 +92,30 @@ export const getMyShipments = createServerFn({ method: "GET" })
 export type ShipmentInput = {
   service_type: string;
   sender_name: string;
-  sender_phone?: string;
-  sender_email?: string;
-  sender_address?: string;
-  sender_city?: string;
-  sender_country?: string;
-  sender_postal_code?: string;
+  sender_phone?: string | undefined;
+  sender_email?: string | undefined;
+  sender_address?: string | undefined;
+  sender_city?: string | undefined;
+  sender_country?: string | undefined;
+  sender_postal_code?: string | undefined;
   receiver_name: string;
-  receiver_phone?: string;
-  receiver_email?: string;
-  receiver_address?: string;
-  receiver_city?: string;
-  receiver_country?: string;
-  receiver_postal_code?: string;
-  package_type?: string;
-  description?: string;
-  weight_kg?: number;
-  length_cm?: number;
-  width_cm?: number;
-  height_cm?: number;
-  quantity?: number;
-  declared_value?: number;
-  pickup_date?: string;
-  pickup_time?: string;
-  special_instructions?: string;
+  receiver_phone?: string | undefined;
+  receiver_email?: string | undefined;
+  receiver_address?: string | undefined;
+  receiver_city?: string | undefined;
+  receiver_country?: string | undefined;
+  receiver_postal_code?: string | undefined;
+  package_type?: string | undefined;
+  description?: string | undefined;
+  weight_kg?: number | undefined;
+  length_cm?: number | undefined;
+  width_cm?: number | undefined;
+  height_cm?: number | undefined;
+  quantity?: number | undefined;
+  declared_value?: number | undefined;
+  pickup_date?: string | undefined;
+  pickup_time?: string | undefined;
+  special_instructions?: string | undefined;
 };
 
 export const createShipment = createServerFn({ method: "POST" })
@@ -174,14 +174,14 @@ export const saveAddress = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (d: {
-      label?: string;
+      label?: string | undefined;
       contact_name: string;
-      phone?: string;
-      email?: string;
+      phone?: string | undefined;
+      email?: string | undefined;
       line1: string;
-      line2?: string;
+      line2?: string | undefined;
       city: string;
-      postal_code?: string;
+      postal_code?: string | undefined;
       country: string;
     }) => d,
   )
@@ -302,10 +302,10 @@ export const createFlightBooking = createServerFn({ method: "POST" })
       children: number;
       infants: number;
       cabin_class: string;
-      contact_name?: string;
-      contact_email?: string;
-      contact_phone?: string;
-      notes?: string;
+      contact_name?: string | undefined;
+      contact_email?: string | undefined;
+      contact_phone?: string | undefined;
+      notes?: string | undefined;
     }) => d,
   )
   .handler(async ({ data, context }) => {

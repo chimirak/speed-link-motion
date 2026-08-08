@@ -29,6 +29,13 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackingRouteImport } from './routes/tracking'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as AuthenticatedDashboardAddressesRouteImport } from './routes/_authenticated/dashboard.addresses'
+import { Route as AuthenticatedDashboardFlightsRouteImport } from './routes/_authenticated/dashboard.flights'
+import { Route as AuthenticatedDashboardInvoicesRouteImport } from './routes/_authenticated/dashboard.invoices'
+import { Route as AuthenticatedDashboardNewShipmentRouteImport } from './routes/_authenticated/dashboard.new-shipment'
+import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard.settings'
+import { Route as AuthenticatedDashboardShipmentsRouteImport } from './routes/_authenticated/dashboard.shipments'
+import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard.support'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -130,6 +137,48 @@ const AuthenticatedDashboardIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardAddressesRoute =
+  AuthenticatedDashboardAddressesRouteImport.update({
+    id: '/addresses',
+    path: '/addresses',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardFlightsRoute =
+  AuthenticatedDashboardFlightsRouteImport.update({
+    id: '/flights',
+    path: '/flights',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardInvoicesRoute =
+  AuthenticatedDashboardInvoicesRouteImport.update({
+    id: '/invoices',
+    path: '/invoices',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardNewShipmentRoute =
+  AuthenticatedDashboardNewShipmentRouteImport.update({
+    id: '/new-shipment',
+    path: '/new-shipment',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardSettingsRoute =
+  AuthenticatedDashboardSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardShipmentsRoute =
+  AuthenticatedDashboardShipmentsRouteImport.update({
+    id: '/shipments',
+    path: '/shipments',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardSupportRoute =
+  AuthenticatedDashboardSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -150,6 +199,13 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/tracking': typeof TrackingRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/dashboard/addresses': typeof AuthenticatedDashboardAddressesRoute
+  '/dashboard/flights': typeof AuthenticatedDashboardFlightsRoute
+  '/dashboard/invoices': typeof AuthenticatedDashboardInvoicesRoute
+  '/dashboard/new-shipment': typeof AuthenticatedDashboardNewShipmentRoute
+  '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/dashboard/shipments': typeof AuthenticatedDashboardShipmentsRoute
+  '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -170,6 +226,13 @@ export interface FileRoutesByTo {
   '/solutions': typeof SolutionsRoute
   '/terms': typeof TermsRoute
   '/tracking': typeof TrackingRoute
+  '/dashboard/addresses': typeof AuthenticatedDashboardAddressesRoute
+  '/dashboard/flights': typeof AuthenticatedDashboardFlightsRoute
+  '/dashboard/invoices': typeof AuthenticatedDashboardInvoicesRoute
+  '/dashboard/new-shipment': typeof AuthenticatedDashboardNewShipmentRoute
+  '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/dashboard/shipments': typeof AuthenticatedDashboardShipmentsRoute
+  '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -193,6 +256,13 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/tracking': typeof TrackingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/_authenticated/dashboard/addresses': typeof AuthenticatedDashboardAddressesRoute
+  '/_authenticated/dashboard/flights': typeof AuthenticatedDashboardFlightsRoute
+  '/_authenticated/dashboard/invoices': typeof AuthenticatedDashboardInvoicesRoute
+  '/_authenticated/dashboard/new-shipment': typeof AuthenticatedDashboardNewShipmentRoute
+  '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/_authenticated/dashboard/shipments': typeof AuthenticatedDashboardShipmentsRoute
+  '/_authenticated/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -216,6 +286,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/tracking'
     | '/dashboard'
+    | '/dashboard/addresses'
+    | '/dashboard/flights'
+    | '/dashboard/invoices'
+    | '/dashboard/new-shipment'
+    | '/dashboard/settings'
+    | '/dashboard/shipments'
+    | '/dashboard/support'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -236,6 +313,13 @@ export interface FileRouteTypes {
     | '/solutions'
     | '/terms'
     | '/tracking'
+    | '/dashboard/addresses'
+    | '/dashboard/flights'
+    | '/dashboard/invoices'
+    | '/dashboard/new-shipment'
+    | '/dashboard/settings'
+    | '/dashboard/shipments'
+    | '/dashboard/support'
     | '/dashboard'
   id:
     | '__root__'
@@ -258,6 +342,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/tracking'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dashboard/addresses'
+    | '/_authenticated/dashboard/flights'
+    | '/_authenticated/dashboard/invoices'
+    | '/_authenticated/dashboard/new-shipment'
+    | '/_authenticated/dashboard/settings'
+    | '/_authenticated/dashboard/shipments'
+    | '/_authenticated/dashboard/support'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -424,15 +515,79 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/addresses': {
+      id: '/_authenticated/dashboard/addresses'
+      path: '/addresses'
+      fullPath: '/dashboard/addresses'
+      preLoaderRoute: typeof AuthenticatedDashboardAddressesRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/flights': {
+      id: '/_authenticated/dashboard/flights'
+      path: '/flights'
+      fullPath: '/dashboard/flights'
+      preLoaderRoute: typeof AuthenticatedDashboardFlightsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/invoices': {
+      id: '/_authenticated/dashboard/invoices'
+      path: '/invoices'
+      fullPath: '/dashboard/invoices'
+      preLoaderRoute: typeof AuthenticatedDashboardInvoicesRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/new-shipment': {
+      id: '/_authenticated/dashboard/new-shipment'
+      path: '/new-shipment'
+      fullPath: '/dashboard/new-shipment'
+      preLoaderRoute: typeof AuthenticatedDashboardNewShipmentRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/settings': {
+      id: '/_authenticated/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/shipments': {
+      id: '/_authenticated/dashboard/shipments'
+      path: '/shipments'
+      fullPath: '/dashboard/shipments'
+      preLoaderRoute: typeof AuthenticatedDashboardShipmentsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/support': {
+      id: '/_authenticated/dashboard/support'
+      path: '/support'
+      fullPath: '/dashboard/support'
+      preLoaderRoute: typeof AuthenticatedDashboardSupportRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
   }
 }
 
 interface AuthenticatedDashboardRouteChildren {
+  AuthenticatedDashboardAddressesRoute: typeof AuthenticatedDashboardAddressesRoute
+  AuthenticatedDashboardFlightsRoute: typeof AuthenticatedDashboardFlightsRoute
+  AuthenticatedDashboardInvoicesRoute: typeof AuthenticatedDashboardInvoicesRoute
+  AuthenticatedDashboardNewShipmentRoute: typeof AuthenticatedDashboardNewShipmentRoute
+  AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
+  AuthenticatedDashboardShipmentsRoute: typeof AuthenticatedDashboardShipmentsRoute
+  AuthenticatedDashboardSupportRoute: typeof AuthenticatedDashboardSupportRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
+    AuthenticatedDashboardAddressesRoute: AuthenticatedDashboardAddressesRoute,
+    AuthenticatedDashboardFlightsRoute: AuthenticatedDashboardFlightsRoute,
+    AuthenticatedDashboardInvoicesRoute: AuthenticatedDashboardInvoicesRoute,
+    AuthenticatedDashboardNewShipmentRoute:
+      AuthenticatedDashboardNewShipmentRoute,
+    AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
+    AuthenticatedDashboardShipmentsRoute: AuthenticatedDashboardShipmentsRoute,
+    AuthenticatedDashboardSupportRoute: AuthenticatedDashboardSupportRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   }
 
