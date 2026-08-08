@@ -56,8 +56,14 @@ function AuthPage() {
     e.preventDefault();
     const parsedEmail = emailSchema.safeParse(email);
     const parsedPassword = passwordSchema.safeParse(password);
-    if (!parsedEmail.success) return toast.error(parsedEmail.error.issues[0]!.message);
-    if (!parsedPassword.success) return toast.error(parsedPassword.error.issues[0]!.message);
+    if (!parsedEmail.success) {
+      toast.error(parsedEmail.error.issues[0]!.message);
+      return;
+    }
+    if (!parsedPassword.success) {
+      toast.error(parsedPassword.error.issues[0]!.message);
+      return;
+    }
 
     setBusy(true);
     try {
