@@ -2,6 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateTrackingNumber } from "@/lib/logistics";
 
+
+/** Drops undefined keys so inserts satisfy exactOptionalPropertyTypes. */
+function clean<T extends Record<string, unknown>>(obj: T): T {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+}
+
 export const getMyRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -130,7 +136,7 @@ export const createShipment = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase
       .from("shipments")
       .insert({
-        ...data,
+        ...clean(data),
         quantity: data.quantity ?? 1,
         tracking_number,
         user_id: context.userId,
@@ -188,7 +194,7 @@ export const saveAddress = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("addresses")
-      .insert({ ...data, user_id: context.userId });
+      .insert({ ...clean(data), user_id: context.userId });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -312,7 +318,7 @@ export const createFlightBooking = createServerFn({ method: "POST" })
     const reference = `FLT-${Math.floor(100000 + Math.random() * 900000)}`;
     const { data: row, error } = await context.supabase
       .from("flight_bookings")
-      .insert({ ...data, reference, user_id: context.userId })
+      .insert({ ...clean(data), reference, user_id: context.userId })
       .select("id, reference")
       .single();
     if (error) throw new Error(error.message);
