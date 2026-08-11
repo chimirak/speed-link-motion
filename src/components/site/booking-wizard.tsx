@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, LogIn } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/use-auth";
+import { createShipment } from "@/lib/portal.functions";
 
 const steps = ["Sender", "Receiver", "Package", "Service", "Review"] as const;
 
@@ -46,7 +52,33 @@ const insurances = ["Standard (£100)", "Extended (£1,000)", "Full value declar
 export function BookingWizard() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(empty);
-  const [done, setDone] = useState(false);
+  const [created, setCreated] = useState<{ tracking_number: string } | null>(null);
+  const { session, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const submitShipment = useServerFn(createShipment);
+
+  // Ownership is derived server-side from the authenticated session, never from
+  // anything this form sends.
+  const mutation = useMutation({
+    mutationFn: () =>
+      submitShipment({
+        data: {
+          service_type: form.method || "express",
+          sender_name: form.senderName.trim(),
+          sender_phone: form.senderPhone.trim() || undefined,
+          sender_address: form.senderAddress.trim() || undefined,
+          receiver_name: form.receiverName.trim(),
+          receiver_phone: form.receiverPhone.trim() || undefined,
+          receiver_address: form.receiverAddress.trim() || undefined,
+          description: form.contents.trim() || undefined,
+          weight_kg: Number.parseFloat(form.weight) || undefined,
+          pickup_date: form.pickupDate || undefined,
+          special_instructions: form.dims.trim() ? `Dimensions: ${form.dims.trim()}` : undefined,
+        },
+      }),
+    onSuccess: (row) => setCreated({ tracking_number: row.tracking_number }),
+    onError: (e: Error) => toast.error(e.message || "Could not create the booking."),
+  });
 
   const set = (k: keyof Form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -57,38 +89,67 @@ export function BookingWizard() {
     return true;
   }, [step, form]);
 
-  const reference = useMemo(
-    () =>
-      `SLX-${Math.abs(hash(form.receiverName + form.senderName))
-        .toString()
-        .slice(0, 8)}`,
-    [form.receiverName, form.senderName],
-  );
-
-  if (done) {
+  if (created) {
     return (
       <div className="surface-card p-10 text-center">
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary text-primary-foreground">
           <Check className="size-6" />
         </span>
-        <h2 className="mt-6 font-display text-2xl font-extrabold">Booking request received</h2>
+        <h2 className="mt-6 font-display text-2xl font-extrabold">
+          Your shipment booking has been received
+        </h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-          Your reference is <span className="numeric font-bold text-foreground">{reference}</span>.
-          A coordinator will confirm collection and pricing by email at Speedlinkcourier6@gmail.com
-          within 30 minutes during operating hours.
+          Your tracking number is{" "}
+          <span className="numeric font-bold text-foreground">{created.tracking_number}</span>. It
+          is saved to your account and a coordinator will confirm collection and pricing shortly.
         </p>
-        <Button
-          variant="speed"
-          size="pill-lg"
-          className="mt-8"
-          onClick={() => {
-            setForm(empty);
-            setStep(0);
-            setDone(false);
-          }}
-        >
-          Book another shipment
-        </Button>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Button
+            variant="speed"
+            size="pill-lg"
+            onClick={() => void navigate({ to: "/dashboard/shipments" })}
+          >
+            View in my dashboard
+          </Button>
+          <Button
+            variant="outline"
+            size="pill-lg"
+            onClick={() => {
+              setForm(empty);
+              setStep(0);
+              setCreated(null);
+            }}
+          >
+            Book another shipment
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Booking requires an account: the shipment must belong to a real customer
+  // record, and ownership is taken from the authenticated session.
+  if (!authLoading && !session) {
+    return (
+      <div className="surface-card p-10 text-center">
+        <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary/12 text-primary">
+          <LogIn className="size-6" />
+        </span>
+        <h2 className="mt-6 font-display text-2xl font-extrabold">Sign in to book a shipment</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+          Please create an account or sign in before booking a shipment. Your bookings, tracking and
+          invoices then live in your dashboard.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Button asChild variant="speed" size="pill-lg">
+            <Link to="/auth" search={{ next: "/book" }}>
+              Sign in or create an account
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="pill-lg">
+            <Link to="/tracking">Track a shipment instead</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -126,7 +187,7 @@ export function BookingWizard() {
         onSubmit={(e) => {
           e.preventDefault();
           if (step < steps.length - 1) setStep((s) => s + 1);
-          else setDone(true);
+          else mutation.mutate();
         }}
       >
         <AnimatePresence mode="wait">
@@ -241,9 +302,22 @@ export function BookingWizard() {
               <ArrowLeft className="size-4" /> Back
             </Button>
           )}
-          <Button type="submit" variant="speed" size="pill-lg" disabled={!valid}>
-            {step === steps.length - 1 ? "Confirm booking" : "Continue"}
-            <ArrowRight className="size-4" />
+          <Button
+            type="submit"
+            variant="speed"
+            size="pill-lg"
+            disabled={!valid || mutation.isPending}
+          >
+            {mutation.isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" /> Creating booking…
+              </>
+            ) : (
+              <>
+                {step === steps.length - 1 ? "Confirm booking" : "Continue"}
+                <ArrowRight className="size-4" />
+              </>
+            )}
           </Button>
           <p className="text-xs text-muted-foreground">
             Step {step + 1} of {steps.length}
@@ -317,13 +391,4 @@ function Select({
       </select>
     </div>
   );
-}
-
-function hash(s: string) {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h;
 }
