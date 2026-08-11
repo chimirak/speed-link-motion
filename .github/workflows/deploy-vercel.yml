@@ -186,6 +186,28 @@ jobs:
             || echo "::warning::ALIAS FAILED >> could not alias $DEPLOY_URL"
           echo "::warning::INSPECT >> $(vercel inspect speed-link-motion.vercel.app --token "$VERCEL_TOKEN" 2>&1 | tr '\n' ' ' | cut -c1-400)"
 
+      # Production verification from inside CI, which can reach the live site.
+      # Results are emitted as ::warning:: so they are readable via the
+      # annotations API without access to the job log storage host.
+      - name: Verify live production site
+        run: |
+          set -u
+          BASE="https://speed-link-motion.vercel.app"
+          sleep 15
+          codes=""
+          for p in / /blog /auth /auth/callback /auth/update-password /tracking /book /dashboard /dashboard/shipments /admin /admin/platform /claim-ownership /favicon.png; do
+            c=$(curl -s -o /dev/null -w '%{http_code}' --max-time 25 "$BASE$p" || echo ERR)
+            codes="$codes $p=$c"
+          done
+          echo "::warning::ROUTES >>$codes"
+
+          html=$(curl -s --max-time 30 "$BASE/" || true)
+          l5e=$(printf '%s' "$html" | grep -c "__l5e" || true)
+          wa=$(printf '%s' "$html" | grep -c "wa.me/13252837971" || true)
+          mark=$(printf '%s' "$html" | grep -c "speedlink-mark-" || true)
+          lov=$(printf '%s' "$html" | grep -c "lovable.app" || true)
+          echo "::warning::CONTENT >> __l5e=$l5e (want 0) wa.me=$wa (want >=1) bundled-logo=$mark (want >=1) lovable.app=$lov (want 0)"
+
       - name: Summary
         run: |
           {
