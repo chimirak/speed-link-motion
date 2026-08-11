@@ -1,10 +1,12 @@
+import { Link } from "@tanstack/react-router";
+import type { PublicPost } from "@/lib/content.functions";
 import { Reveal } from "@/components/motion/reveal";
 import { ArrowUpRight } from "lucide-react";
 import newsSea from "@/assets/news-sea.jpg";
 import newsOffice from "@/assets/news-office.jpg";
 import newsScan from "@/assets/news-scan.jpg";
 
-const posts = [
+const fallbackPosts = [
   {
     img: newsSea,
     alt: "Stacked shipping containers at a port, one painted red",
@@ -34,7 +36,38 @@ const posts = [
   },
 ];
 
-export function News() {
+type NewsItem = {
+  img: string;
+  alt: string;
+  category: string;
+  date: string;
+  title: string;
+  excerpt: string;
+  to: string;
+};
+
+const FALLBACK_IMAGES = [newsSea, newsOffice, newsScan];
+
+export function News({ posts: cmsPosts = [] }: { posts?: PublicPost[] }) {
+  // Real published posts take over as soon as the CMS has any; until then the
+  // built-in editorial cards stand in so the homepage is never bare.
+  const items: NewsItem[] =
+    cmsPosts.length > 0
+      ? cmsPosts.slice(0, 3).map((p, i) => ({
+          img: p.cover_image ?? FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]!,
+          alt: "",
+          category: "Insight",
+          date: new Date(p.published_at ?? p.created_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }),
+          title: p.title,
+          excerpt: p.excerpt ?? "",
+          to: "/blog",
+        }))
+      : fallbackPosts.map((p) => ({ ...p, to: "/blog" }));
+
   return (
     <section id="news" className="section-pad relative bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -50,20 +83,20 @@ export function News() {
             </Reveal>
           </div>
           <Reveal delay={0.12}>
-            <a
-              href="#news"
+            <Link
+              to="/blog"
               className="inline-flex items-center gap-2 border-b border-foreground pb-1 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
             >
               All updates <ArrowUpRight className="size-4" />
-            </a>
+            </Link>
           </Reveal>
         </div>
 
         <ul className="mt-14 grid gap-8 lg:grid-cols-3">
-          {posts.map((p, i) => (
+          {items.map((p, i) => (
             <Reveal as="li" key={p.title} delay={0.07 * i}>
               <article className="group h-full">
-                <a href="#news" className="flex h-full flex-col">
+                <Link to={p.to} className="flex h-full flex-col">
                   <div className="overflow-hidden rounded-[var(--radius-2xl)] border border-border">
                     <div className="aspect-[4/3] w-full">
                       <img
@@ -91,7 +124,7 @@ export function News() {
                     Read more
                     <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   </span>
-                </a>
+                </Link>
               </article>
             </Reveal>
           ))}

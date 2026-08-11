@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getPublishedPosts, type PublicPost } from "@/lib/content.functions";
 import { HeroSlider } from "@/components/site/hero-slider";
 import { TrackingSearch } from "@/components/site/tracking-search";
 import { Stats } from "@/components/site/stats";
@@ -19,6 +20,15 @@ const description =
   "Time-critical courier and freight from Farnborough to 220+ countries. Live tracking, guaranteed timings, fully insured, 24/7 human support.";
 
 export const Route = createFileRoute("/")({
+  // The homepage must render even if the CMS is unavailable.
+  loader: async () => {
+    try {
+      return { posts: await getPublishedPosts({ data: { limit: 3 } }) };
+    } catch (error) {
+      console.error("[home] could not load posts:", error);
+      return { posts: [] as PublicPost[] };
+    }
+  },
   head: () => ({
     meta: [
       { title },
@@ -54,6 +64,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const { posts } = Route.useLoaderData();
+
   return (
     <>
       <HeroSlider />
@@ -68,7 +80,7 @@ function Home() {
       <Process />
       <Testimonials />
       <Partners />
-      <News />
+      <News posts={posts} />
       <CallToAction />
     </>
   );
