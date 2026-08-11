@@ -9,9 +9,20 @@ import type { Database } from "@/integrations/supabase/types";
  * returns a whitelisted projection: no names, phones, emails, addresses or
  * internal notes ever cross this boundary.
  */
+function resolveSupabaseEnv() {
+  // Mirrors src/integrations/supabase/client.ts: VITE_* values are inlined at
+  // build time, process.env is read at runtime. Preferring both means the
+  // function still works if only one source is configured on the host.
+  const url =
+    (import.meta.env["VITE_SUPABASE_URL"] as string | undefined) || process.env["SUPABASE_URL"];
+  const key =
+    (import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string | undefined) ||
+    process.env["SUPABASE_PUBLISHABLE_KEY"];
+  return { url, key };
+}
+
 function publicClient() {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
-  const url = process.env["SUPABASE_URL"];
+  const { url, key } = resolveSupabaseEnv();
   if (!key || !url) throw new Error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },

@@ -13,7 +13,16 @@ import slideCourier from "@/assets/slide-courier.jpg";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/blog")({
-  loader: async () => ({ posts: await getPublishedPosts({ data: { limit: 24 } }) }),
+  // A CMS outage must never break the public blog page: on any failure we fall
+  // back to the built-in editorial cards rather than throwing a 500.
+  loader: async () => {
+    try {
+      return { posts: await getPublishedPosts({ data: { limit: 24 } }) };
+    } catch (error) {
+      console.error("[blog] could not load posts:", error);
+      return { posts: [] as PublicPost[] };
+    }
+  },
   head: () =>
     pageHead({
       title: "Blog",

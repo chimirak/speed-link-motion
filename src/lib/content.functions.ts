@@ -8,10 +8,29 @@ import type { Database } from "@/integrations/supabase/types";
  * RLS exposes only `blog_posts` where published = true and `hero_slides` where
  * active = true, so unpublished drafts can never leak through this path.
  */
+function resolveSupabaseEnv() {
+  // Mirrors src/integrations/supabase/client.ts: VITE_* values are inlined at
+  // build time, process.env is read at runtime. Preferring both means the
+  // function still works if only one source is configured on the host.
+  const url =
+    (import.meta.env["VITE_SUPABASE_URL"] as string | undefined) || process.env["SUPABASE_URL"];
+  const key =
+    (import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string | undefined) ||
+    process.env["SUPABASE_PUBLISHABLE_KEY"];
+  return { url, key };
+}
+
+/**
+ * Returns null rather than throwing when Supabase is not configured. A public
+ * marketing page must never return a 500 because the CMS is unreachable; the
+ * callers fall back to their built-in editorial content instead.
+ */
 function publicClient() {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
-  const url = process.env["SUPABASE_URL"];
-  if (!key || !url) throw new Error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
+  const { url, key } = resolveSupabaseEnv();
+  if (!key || !url) {
+    console.error("[content] Supabase env not configured; serving fallback content.");
+    return null;
+  }
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: {
@@ -56,7 +75,9 @@ export const getPublishedPosts = createServerFn({ method: "GET" })
     limit: Math.min(Math.max(data?.limit ?? 12, 1), 50),
   }))
   .handler(async ({ data }): Promise<PublicPost[]> => {
-    const { data: rows, error } = await publicClient()
+    const client = publicClient();
+    if (!client) return [];
+    const { data: rows, error } = await client
       .from("blog_posts")
       .select("id,slug,title,excerpt,cover_image,published_at,created_at")
       .eq("published", true)
@@ -79,7 +100,9 @@ export const getPublishedPost = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data }) => {
     if (!data.slug) return null;
-    const { data: row, error } = await publicClient()
+    const client = publicClient();
+    if (!client) return null;
+    const { data: row, error } = await client
       .from("blog_posts")
       .select("id,slug,title,excerpt,body,cover_image,published_at,seo_description")
       .eq("published", true)
@@ -96,7 +119,9 @@ export const getPublishedPost = createServerFn({ method: "GET" })
 /** Active hero slides in display order. Returns [] so callers can fall back. */
 export const getActiveSlides = createServerFn({ method: "GET" }).handler(
   async (): Promise<PublicSlide[]> => {
-    const { data: rows, error } = await publicClient()
+    const client = publicClient();
+    if (!client) return [];
+    const { data: rows, error } = await client
       .from("hero_slides")
       .select(
         "id,title,highlight,kicker,copy,image_url,primary_label,primary_url,secondary_label,secondary_url",
