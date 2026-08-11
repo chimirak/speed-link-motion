@@ -84,24 +84,6 @@ jobs:
       # SSR function can read them. `vercel env add` fails if the key already
       # exists, so each is removed first; both sides are tolerant of a missing key
       # on the very first run.
-      - name: Sync runtime environment variables to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: |
-          set -u
-          sync_var() {
-            name="$1"
-            value="$2"
-            vercel env rm "$name" production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
-            printf '%s' "$value" | vercel env add "$name" production --token "$VERCEL_TOKEN" >/dev/null 2>&1 \
-              && echo "synced $name" \
-              || echo "::warning::Could not sync $name; set it manually in Vercel project settings."
-          }
-          sync_var SUPABASE_URL "$SUPABASE_URL"
-          sync_var SUPABASE_PUBLISHABLE_KEY "$SUPABASE_PUBLISHABLE_KEY"
-
       - name: Deploy prebuilt output to Vercel (production)
         id: deploy
         env:
@@ -122,7 +104,51 @@ jobs:
           fi
           url=$(vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Deployed to: $url"
+          echo "::warning::FIRST DEPLOY URL >> $url"
+
+      # Runtime vars must be synced AFTER the project exists and is linked -
+      # `vercel env add` has no target project before the first deploy, which is
+      # why the earlier pre-deploy attempt failed and left the SSR function
+      # without Supabase config at runtime.
+      - name: Sync runtime environment variables to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -u
+          vercel pull --yes --environment=production --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+
+          sync_var() {
+            name="$1"; value="$2"
+            if [ -z "$value" ]; then
+              echo "::warning::$name secret is empty; skipping."
+              return
+            fi
+            for env in production preview development; do
+              vercel env rm "$name" "$env" --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+              printf '%s' "$value" | vercel env add "$name" "$env" --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            done
+            if vercel env ls production --token "$VERCEL_TOKEN" 2>/dev/null | grep -q "$name"; then
+              echo "synced $name"
+            else
+              echo "::warning::Could not sync $name; set it manually in Vercel project settings."
+            fi
+          }
+          sync_var SUPABASE_URL "$SUPABASE_URL"
+          sync_var SUPABASE_PUBLISHABLE_KEY "$SUPABASE_PUBLISHABLE_KEY"
+
+      # Redeploy so the SSR function picks up the variables just synced.
+      # Vercel applies env changes to NEW deployments only.
+      - name: Redeploy with runtime variables applied
+        id: redeploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          url=$(vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "::warning::PRODUCTION URL >> $url"
 
       - name: Summary
         run: |
@@ -130,5 +156,5 @@ jobs:
             echo "### Vercel production deployment"
             echo ""
             echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- URL: ${{ steps.deploy.outputs.url }}"
+            echo "- URL: ${{ steps.redeploy.outputs.url || steps.deploy.outputs.url }}"
           } >> "$GITHUB_STEP_SUMMARY"
