@@ -21,7 +21,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/speedlink-mark.png.asset.json";
+import logo from "@/assets/speedlink-mark.png";
 import { cn } from "@/lib/utils";
 
 type Item = { label: string; to: string; desc: string; icon: typeof Truck };
@@ -185,7 +185,7 @@ export function SiteNav() {
             className="flex min-w-0 items-center gap-2.5"
           >
             <img
-              src={logo.url}
+              src={logo}
               alt=""
               width={40}
               height={40}

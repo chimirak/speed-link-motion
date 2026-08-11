@@ -1,6 +1,6 @@
 import { Mail, MapPin } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/speedlink-mark.png.asset.json";
+import logo from "@/assets/speedlink-mark.png";
 
 const columns = [
   {
@@ -43,7 +43,7 @@ export function SiteFooter() {
           <div>
             <div className="flex min-w-0 items-center gap-2.5">
               <img
-                src={logo.url}
+                src={logo}
                 alt=""
                 width={40}
                 height={40}

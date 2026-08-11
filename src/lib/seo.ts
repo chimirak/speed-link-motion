@@ -1,5 +1,9 @@
 const SITE = "Speed Link Express Logistics";
-const ORIGIN = "https://speed-link-motion.lovable.app";
+// Canonical origin. Override with VITE_SITE_URL when the custom domain goes
+// live so canonical/OG URLs follow without a code change.
+const ORIGIN = (
+  (import.meta.env["VITE_SITE_URL"] as string | undefined) ?? "https://speed-link-motion.vercel.app"
+).replace(/\/$/, "");
 
 export function pageHead({
   title,

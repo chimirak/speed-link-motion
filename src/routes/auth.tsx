@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
+import { authCallbackUrl, siteUrl } from "@/lib/site-url";
 import { z } from "zod";
 import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ function AuthPage() {
           email: parsedEmail.data,
           password: parsedPassword.data,
           options: {
-            emailRedirectTo: window.location.origin + "/dashboard",
+            emailRedirectTo: authCallbackUrl("/dashboard"),
             data: { full_name: fullName.trim().slice(0, 120) },
           },
         });
@@ -96,10 +97,31 @@ function AuthPage() {
     }
   }
 
+  async function onForgotPassword() {
+    const parsedEmail = emailSchema.safeParse(email);
+    if (!parsedEmail.success) {
+      toast.error("Enter your email address first, then choose 'Forgot password'.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(parsedEmail.data, {
+        redirectTo: authCallbackUrl("/auth/update-password"),
+      });
+      if (error) throw error;
+      setNotice("If that email is registered, a password reset link is on its way.");
+      toast.success("Password reset email sent.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not send reset email.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onGoogle() {
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/auth",
+      redirect_uri: siteUrl("/auth/callback"),
     });
     if (result.error) {
       setBusy(false);
@@ -190,6 +212,19 @@ function AuthPage() {
             placeholder="••••••••"
             autoComplete={mode === "signin" ? "current-password" : "new-password"}
           />
+
+          {mode === "signin" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => void onForgotPassword()}
+                disabled={busy}
+                className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline disabled:opacity-50"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           <Button type="submit" variant="speed" size="pill-lg" className="w-full" disabled={busy}>
             {busy ? (

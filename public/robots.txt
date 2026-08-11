@@ -1,16 +1,8 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+# Private application areas must never be indexed.
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /auth
 
-Sitemap: https://speed-link-motion.lovable.app/sitemap.xml
+Sitemap: https://speed-link-motion.vercel.app/sitemap.xml

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getPublishedPosts, type PublicPost } from "@/lib/content.functions";
 import { PageHero, Section } from "@/components/site/page-shell";
 import { CallToAction } from "@/components/site/call-to-action";
 import { Reveal } from "@/components/motion/reveal";
@@ -12,6 +13,7 @@ import slideCourier from "@/assets/slide-courier.jpg";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/blog")({
+  loader: async () => ({ posts: await getPublishedPosts({ data: { limit: 24 } }) }),
   head: () =>
     pageHead({
       title: "Blog",
@@ -22,7 +24,9 @@ export const Route = createFileRoute("/blog")({
   component: BlogPage,
 });
 
-const posts = [
+const FALLBACK_IMAGES = [slideCourier, newsSea, newsScan, airFreight, warehouse, newsOffice];
+
+const editorialPosts = [
   {
     title: "What actually causes a missed delivery window",
     excerpt:
@@ -72,7 +76,48 @@ const posts = [
   },
 ];
 
+type Card = {
+  key: string;
+  title: string;
+  excerpt: string;
+  tag: string;
+  date: string;
+  image: string;
+};
+
+function formatPostDate(value: string | null) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 function BlogPage() {
+  const { posts } = Route.useLoaderData();
+
+  // Real published posts take over the page as soon as the CMS has any.
+  // Until then the existing editorial cards stand in, so the page is never bare.
+  const cards: Card[] =
+    posts.length > 0
+      ? posts.map((p: PublicPost, i: number) => ({
+          key: p.id,
+          title: p.title,
+          excerpt: p.excerpt ?? "",
+          tag: "Insight",
+          date: formatPostDate(p.published_at ?? p.created_at),
+          image: p.cover_image ?? FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]!,
+        }))
+      : editorialPosts.map((p) => ({
+          key: p.title,
+          title: p.title,
+          excerpt: p.excerpt,
+          tag: p.tag,
+          date: p.date,
+          image: p.image,
+        }));
+
   return (
     <>
       <PageHero
@@ -83,8 +128,8 @@ function BlogPage() {
       />
       <Section>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((p, i) => (
-            <Reveal key={p.title} delay={0.05 * i}>
+          {cards.map((p, i) => (
+            <Reveal key={p.key} delay={0.05 * i}>
               <article className="surface-card group h-full overflow-hidden">
                 <div className="overflow-hidden">
                   <img
