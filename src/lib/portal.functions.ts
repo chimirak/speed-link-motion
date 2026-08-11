@@ -340,3 +340,43 @@ export const markNotificationsRead = createServerFn({ method: "POST" })
       .eq("read", false);
     return { ok: true };
   });
+
+/**
+ * A single shipment owned by the caller, plus its public tracking timeline.
+ *
+ * Ownership is filtered here AND enforced by RLS, so a customer passing another
+ * customer's shipment id simply gets null rather than someone else's record.
+ * Internal notes are deliberately not selected.
+ */
+export const getMyShipmentDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { shipmentId: string }) => ({
+    shipmentId: String(d.shipmentId ?? "").slice(0, 60),
+  }))
+  .handler(async ({ data, context }) => {
+    const { data: shipment } = await context.supabase
+      .from("shipments")
+      .select(
+        "id,tracking_number,status,service_type,sender_name,sender_phone,sender_address,sender_city,sender_country,receiver_name,receiver_phone,receiver_address,receiver_city,receiver_country,package_type,description,weight_kg,quantity,declared_value,pickup_date,estimated_delivery,current_location,created_at,updated_at",
+      )
+      .eq("id", data.shipmentId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (!shipment) return null;
+
+    const { data: events } = await context.supabase
+      .from("tracking_events")
+      .select("id,status,location,description,occurred_at")
+      .eq("shipment_id", shipment.id)
+      .eq("is_public", true)
+      .order("occurred_at", { ascending: false });
+
+    const { data: invoices } = await context.supabase
+      .from("invoices")
+      .select("id,invoice_number,status,total,currency,issued_at")
+      .eq("shipment_id", shipment.id)
+      .eq("user_id", context.userId);
+
+    return { shipment, events: events ?? [], invoices: invoices ?? [] };
+  });

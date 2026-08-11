@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyShipments } from "@/lib/portal.functions";
@@ -31,7 +31,8 @@ function ShipmentsPage() {
                 <th className="py-3 pr-4 font-medium">Route</th>
                 <th className="py-3 pr-4 font-medium">Service</th>
                 <th className="py-3 pr-4 font-medium">Booked</th>
-                <th className="py-3 font-medium">Status</th>
+                <th className="py-3 pr-4 font-medium">Status</th>
+                <th className="py-3 font-medium sr-only">Details</th>
               </tr>
             </thead>
             <tbody>
@@ -45,8 +46,17 @@ function ShipmentsPage() {
                     {serviceLabel(s.service_type)}
                   </td>
                   <td className="py-4 pr-4 text-muted-foreground">{formatDate(s.created_at)}</td>
-                  <td className="py-4">
+                  <td className="py-4 pr-4">
                     <StatusPill label={statusLabel(s.status)} />
+                  </td>
+                  <td className="py-4">
+                    <Link
+                      to="/dashboard/shipments/$shipmentId"
+                      params={{ shipmentId: s.id }}
+                      className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      View
+                    </Link>
                   </td>
                 </tr>
               ))}

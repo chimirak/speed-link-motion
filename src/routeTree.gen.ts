@@ -55,6 +55,7 @@ import { Route as AuthenticatedDashboardNewShipmentRouteImport } from './routes/
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard.settings'
 import { Route as AuthenticatedDashboardShipmentsRouteImport } from './routes/_authenticated/dashboard.shipments'
 import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard.support'
+import { Route as AuthenticatedDashboardShipmentsShipmentIdRouteImport } from './routes/_authenticated/dashboard.shipments_.$shipmentId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -305,6 +306,12 @@ const AuthenticatedDashboardSupportRoute =
     path: '/support',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardShipmentsShipmentIdRoute =
+  AuthenticatedDashboardShipmentsShipmentIdRouteImport.update({
+    id: '/shipments_/$shipmentId',
+    path: '/shipments/$shipmentId',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -352,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/shipments/$shipmentId': typeof AuthenticatedDashboardShipmentsShipmentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -397,6 +405,7 @@ export interface FileRoutesByTo {
   '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/shipments/$shipmentId': typeof AuthenticatedDashboardShipmentsShipmentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -446,6 +455,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/_authenticated/dashboard/shipments_/$shipmentId': typeof AuthenticatedDashboardShipmentsShipmentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -495,6 +505,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/admin/'
     | '/dashboard/'
+    | '/dashboard/shipments/$shipmentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -540,6 +551,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/admin'
     | '/dashboard'
+    | '/dashboard/shipments/$shipmentId'
   id:
     | '__root__'
     | '/'
@@ -588,6 +600,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/support'
     | '/_authenticated/admin/'
     | '/_authenticated/dashboard/'
+    | '/_authenticated/dashboard/shipments_/$shipmentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -935,6 +948,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardSupportRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/shipments_/$shipmentId': {
+      id: '/_authenticated/dashboard/shipments_/$shipmentId'
+      path: '/shipments/$shipmentId'
+      fullPath: '/dashboard/shipments/$shipmentId'
+      preLoaderRoute: typeof AuthenticatedDashboardShipmentsShipmentIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
   }
 }
 
@@ -986,6 +1006,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardShipmentsRoute: typeof AuthenticatedDashboardShipmentsRoute
   AuthenticatedDashboardSupportRoute: typeof AuthenticatedDashboardSupportRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
+  AuthenticatedDashboardShipmentsShipmentIdRoute: typeof AuthenticatedDashboardShipmentsShipmentIdRoute
 }
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
@@ -999,6 +1020,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardShipmentsRoute: AuthenticatedDashboardShipmentsRoute,
     AuthenticatedDashboardSupportRoute: AuthenticatedDashboardSupportRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+    AuthenticatedDashboardShipmentsShipmentIdRoute:
+      AuthenticatedDashboardShipmentsShipmentIdRoute,
   }
 
 const AuthenticatedDashboardRouteWithChildren =
