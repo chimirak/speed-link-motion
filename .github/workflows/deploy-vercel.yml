@@ -32,11 +32,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    env:
-      # Consumed directly by the Vercel CLI to identify the target project.
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -111,8 +106,20 @@ jobs:
         id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          # Optional. If unset, the first run creates the Vercel project
+          # automatically; copy its IDs into these secrets afterwards so later
+          # runs always target the same project.
+          ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           set -euo pipefail
+          if [ -n "${ORG_ID:-}" ] && [ -n "${PROJECT_ID:-}" ]; then
+            echo "Deploying to the linked Vercel project."
+            export VERCEL_ORG_ID="$ORG_ID"
+            export VERCEL_PROJECT_ID="$PROJECT_ID"
+          else
+            echo "::warning::VERCEL_ORG_ID/VERCEL_PROJECT_ID not set - Vercel will create or infer the project on this run. Add both secrets afterwards."
+          fi
           url=$(vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed to: $url"
