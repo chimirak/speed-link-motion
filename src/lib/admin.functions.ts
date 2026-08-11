@@ -22,12 +22,31 @@ export const PERMISSIONS = [
   "audit.read",
   "staff.manage",
   "settings.write",
+  // Owner-only. Never granted to super_admin or below.
+  "platform.manage",
+  "admin.manage",
+  "sessions.revoke",
+  "security.read",
+  "owner.only",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
+/** Permissions reserved to platform_owner. Mirrors public.has_permission(). */
+export const OWNER_ONLY = [
+  "platform.manage",
+  "admin.manage",
+  "sessions.revoke",
+  "security.read",
+  "owner.only",
+] as const;
+
 const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  super_admin: [...PERMISSIONS],
-  admin: PERMISSIONS.filter((p) => p !== "staff.manage"),
+  platform_owner: [...PERMISSIONS],
+  // Client administrator: full business admin, no platform controls.
+  super_admin: PERMISSIONS.filter((p) => !OWNER_ONLY.includes(p as (typeof OWNER_ONLY)[number])),
+  admin: PERMISSIONS.filter(
+    (p) => p !== "staff.manage" && !OWNER_ONLY.includes(p as (typeof OWNER_ONLY)[number]),
+  ),
   operations: [
     "shipments.read",
     "shipments.write",
@@ -609,4 +628,116 @@ export const saveSetting = createServerFn({ method: "POST" })
       .upsert({ key: data.key, value: data.value as never, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/* ------------------------- PLATFORM OWNER (owner-only) -------------------------
+ * Every function below re-checks authorisation server-side, and the underlying
+ * SECURITY DEFINER routines re-check again in the database. Hiding the UI is a
+ * convenience for the client admin, never the security boundary.
+ * -------------------------------------------------------------------------- */
+
+export type AdminAccount = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  roles: string[];
+  deactivated: boolean;
+  access_revoked_at: string | null;
+  created_at: string;
+};
+
+/** Owner-only: every account with a staff role, plus its security state. */
+export const getAdminAccounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminAccount[]> => {
+    await requirePermission(context, "admin.manage");
+
+    const [profiles, roles, security] = await Promise.all([
+      context.supabase.from("profiles").select("id,email,full_name,created_at").limit(1000),
+      context.supabase.from("user_roles").select("user_id,role"),
+      context.supabase.from("admin_security").select("user_id,deactivated,access_revoked_at"),
+    ]);
+
+    const roleMap = new Map<string, string[]>();
+    for (const r of roles.data ?? []) {
+      const list = roleMap.get(r.user_id) ?? [];
+      list.push(r.role as string);
+      roleMap.set(r.user_id, list);
+    }
+    const secMap = new Map((security.data ?? []).map((s) => [s.user_id, s] as const));
+
+    return (profiles.data ?? [])
+      .map((p) => {
+        const userRoles = roleMap.get(p.id) ?? [];
+        const sec = secMap.get(p.id);
+        return {
+          id: p.id,
+          email: p.email,
+          full_name: p.full_name,
+          roles: userRoles,
+          deactivated: sec?.deactivated ?? false,
+          access_revoked_at: sec?.access_revoked_at ?? null,
+          created_at: p.created_at,
+        };
+      })
+      .filter((a) => a.roles.some((r) => r !== "customer"));
+  });
+
+/** Owner-only: revoke an administrator's access (application-level). */
+export const revokeAdminAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { targetUserId: string; reason?: string | undefined }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "sessions.revoke");
+    const { error } = await context.supabase.rpc("revoke_admin_access", {
+      _target: data.targetUserId,
+      _reason: data.reason ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Owner-only: restore a previously revoked administrator. */
+export const restoreAdminAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { targetUserId: string }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "sessions.revoke");
+    const { error } = await context.supabase.rpc("restore_admin_access", {
+      _target: data.targetUserId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/**
+ * One-time ownership claim for the designated owner email. Safe to expose to any
+ * authenticated user: the database rejects it unless the caller's own verified
+ * auth email matches the designated owner AND no owner exists yet.
+ */
+export const claimPlatformOwnership = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("claim_platform_ownership");
+    if (error) throw new Error(error.message);
+    return { ok: true, message: data as unknown as string };
+  });
+
+/**
+ * Verifies the caller's session has not been revoked. Called by the admin shell
+ * on load, so a revoked administrator loses the portal without waiting for their
+ * access token to expire.
+ */
+export const verifyAdminSession = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const issuedAt =
+      typeof context.claims["iat"] === "number"
+        ? new Date((context.claims["iat"] as number) * 1000).toISOString()
+        : null;
+    const { data, error } = await context.supabase.rpc("check_admin_session", {
+      _issued_at: issuedAt,
+    });
+    if (error) throw new Error(error.message);
+    return { valid: data === true };
   });

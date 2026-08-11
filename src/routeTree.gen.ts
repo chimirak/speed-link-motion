@@ -28,6 +28,7 @@ import { Route as SolutionsRouteImport } from './routes/solutions'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackingRouteImport } from './routes/tracking'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedClaimOwnershipRouteImport } from './routes/_authenticated/claim-ownership'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
@@ -37,6 +38,7 @@ import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminFlightsRouteImport } from './routes/_authenticated/admin.flights'
 import { Route as AuthenticatedAdminHeroRouteImport } from './routes/_authenticated/admin.hero'
 import { Route as AuthenticatedAdminInvoicesRouteImport } from './routes/_authenticated/admin.invoices'
+import { Route as AuthenticatedAdminPlatformRouteImport } from './routes/_authenticated/admin.platform'
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminShipmentsRouteImport } from './routes/_authenticated/admin.shipments'
@@ -146,6 +148,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClaimOwnershipRoute =
+  AuthenticatedClaimOwnershipRouteImport.update({
+    id: '/claim-ownership',
+    path: '/claim-ownership',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -194,6 +202,12 @@ const AuthenticatedAdminInvoicesRoute =
   AuthenticatedAdminInvoicesRouteImport.update({
     id: '/invoices',
     path: '/invoices',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPlatformRoute =
+  AuthenticatedAdminPlatformRouteImport.update({
+    id: '/platform',
+    path: '/platform',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminReportsRoute =
@@ -299,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/tracking': typeof TrackingRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/claim-ownership': typeof AuthenticatedClaimOwnershipRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
@@ -307,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/admin/flights': typeof AuthenticatedAdminFlightsRoute
   '/admin/hero': typeof AuthenticatedAdminHeroRoute
   '/admin/invoices': typeof AuthenticatedAdminInvoicesRoute
+  '/admin/platform': typeof AuthenticatedAdminPlatformRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipments': typeof AuthenticatedAdminShipmentsRoute
@@ -341,6 +357,7 @@ export interface FileRoutesByTo {
   '/solutions': typeof SolutionsRoute
   '/terms': typeof TermsRoute
   '/tracking': typeof TrackingRoute
+  '/claim-ownership': typeof AuthenticatedClaimOwnershipRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/blog': typeof AuthenticatedAdminBlogRoute
@@ -348,6 +365,7 @@ export interface FileRoutesByTo {
   '/admin/flights': typeof AuthenticatedAdminFlightsRoute
   '/admin/hero': typeof AuthenticatedAdminHeroRoute
   '/admin/invoices': typeof AuthenticatedAdminInvoicesRoute
+  '/admin/platform': typeof AuthenticatedAdminPlatformRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipments': typeof AuthenticatedAdminShipmentsRoute
@@ -385,6 +403,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/tracking': typeof TrackingRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/claim-ownership': typeof AuthenticatedClaimOwnershipRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
@@ -393,6 +412,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/flights': typeof AuthenticatedAdminFlightsRoute
   '/_authenticated/admin/hero': typeof AuthenticatedAdminHeroRoute
   '/_authenticated/admin/invoices': typeof AuthenticatedAdminInvoicesRoute
+  '/_authenticated/admin/platform': typeof AuthenticatedAdminPlatformRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/shipments': typeof AuthenticatedAdminShipmentsRoute
@@ -430,6 +450,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/tracking'
     | '/admin'
+    | '/claim-ownership'
     | '/dashboard'
     | '/admin/analytics'
     | '/admin/audit-logs'
@@ -438,6 +459,7 @@ export interface FileRouteTypes {
     | '/admin/flights'
     | '/admin/hero'
     | '/admin/invoices'
+    | '/admin/platform'
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/shipments'
@@ -472,6 +494,7 @@ export interface FileRouteTypes {
     | '/solutions'
     | '/terms'
     | '/tracking'
+    | '/claim-ownership'
     | '/admin/analytics'
     | '/admin/audit-logs'
     | '/admin/blog'
@@ -479,6 +502,7 @@ export interface FileRouteTypes {
     | '/admin/flights'
     | '/admin/hero'
     | '/admin/invoices'
+    | '/admin/platform'
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/shipments'
@@ -515,6 +539,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/tracking'
     | '/_authenticated/admin'
+    | '/_authenticated/claim-ownership'
     | '/_authenticated/dashboard'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/audit-logs'
@@ -523,6 +548,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/flights'
     | '/_authenticated/admin/hero'
     | '/_authenticated/admin/invoices'
+    | '/_authenticated/admin/platform'
     | '/_authenticated/admin/reports'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/shipments'
@@ -696,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/claim-ownership': {
+      id: '/_authenticated/claim-ownership'
+      path: '/claim-ownership'
+      fullPath: '/claim-ownership'
+      preLoaderRoute: typeof AuthenticatedClaimOwnershipRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -757,6 +790,13 @@ declare module '@tanstack/react-router' {
       path: '/invoices'
       fullPath: '/admin/invoices'
       preLoaderRoute: typeof AuthenticatedAdminInvoicesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/platform': {
+      id: '/_authenticated/admin/platform'
+      path: '/platform'
+      fullPath: '/admin/platform'
+      preLoaderRoute: typeof AuthenticatedAdminPlatformRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/reports': {
@@ -868,6 +908,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminFlightsRoute: typeof AuthenticatedAdminFlightsRoute
   AuthenticatedAdminHeroRoute: typeof AuthenticatedAdminHeroRoute
   AuthenticatedAdminInvoicesRoute: typeof AuthenticatedAdminInvoicesRoute
+  AuthenticatedAdminPlatformRoute: typeof AuthenticatedAdminPlatformRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminShipmentsRoute: typeof AuthenticatedAdminShipmentsRoute
@@ -885,6 +926,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminFlightsRoute: AuthenticatedAdminFlightsRoute,
   AuthenticatedAdminHeroRoute: AuthenticatedAdminHeroRoute,
   AuthenticatedAdminInvoicesRoute: AuthenticatedAdminInvoicesRoute,
+  AuthenticatedAdminPlatformRoute: AuthenticatedAdminPlatformRoute,
   AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminShipmentsRoute: AuthenticatedAdminShipmentsRoute,
@@ -928,11 +970,13 @@ const AuthenticatedDashboardRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedClaimOwnershipRoute: typeof AuthenticatedClaimOwnershipRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedClaimOwnershipRoute: AuthenticatedClaimOwnershipRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
 }
 

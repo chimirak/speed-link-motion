@@ -59,6 +59,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      admin_security: {
+        Row: {
+          access_revoked_at: string | null;
+          deactivated: boolean;
+          deactivated_reason: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          user_id: string;
+        };
+        Insert: {
+          access_revoked_at?: string | null;
+          deactivated?: boolean;
+          deactivated_reason?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          user_id: string;
+        };
+        Update: {
+          access_revoked_at?: string | null;
+          deactivated?: boolean;
+          deactivated_reason?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       audit_logs: {
         Row: {
           actor_email: string | null;
@@ -788,6 +815,14 @@ export type Database = {
         };
         Returns: undefined;
       };
+      check_admin_session: { Args: { _issued_at?: string | null }; Returns: boolean };
+      claim_platform_ownership: { Args: Record<string, never>; Returns: string };
+      is_platform_owner: { Args: { _user_id: string }; Returns: boolean };
+      restore_admin_access: { Args: { _target: string }; Returns: undefined };
+      revoke_admin_access: {
+        Args: { _reason?: string | null; _target: string };
+        Returns: undefined;
+      };
       has_permission: {
         Args: { _perm: string; _user_id: string };
         Returns: boolean;
@@ -821,6 +856,7 @@ export type Database = {
     };
     Enums: {
       app_role:
+        | "platform_owner"
         | "super_admin"
         | "admin"
         | "operations"
@@ -962,6 +998,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: [
+        "platform_owner",
         "super_admin",
         "admin",
         "operations",

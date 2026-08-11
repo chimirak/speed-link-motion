@@ -16,10 +16,11 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
+  Landmark,
   Users,
 } from "lucide-react";
 import { PortalShell, type PortalNavItem } from "@/components/portal/portal-shell";
-import { getMyAccess, type Permission } from "@/lib/admin.functions";
+import { getMyAccess, verifyAdminSession, type Permission } from "@/lib/admin.functions";
 import { AdminError, Spinner } from "@/components/portal/admin-ui";
 
 /**
@@ -45,6 +46,13 @@ const ADMIN_NAV: AdminNavItem[] = [
   { to: "/admin/staff", label: "Staff & roles", icon: ShieldCheck, permission: "staff.manage" },
   { to: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, permission: "audit.read" },
   { to: "/admin/settings", label: "Settings", icon: Settings, permission: "settings.write" },
+  // Owner-only. Filtered out for every other role by the permission check below.
+  {
+    to: "/admin/platform",
+    label: "Platform control",
+    icon: Landmark,
+    permission: "platform.manage",
+  },
 ];
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -54,6 +62,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 /** Roles ordered most- to least-privileged, for the sidebar badge. */
 const ROLE_LABELS: Record<string, string> = {
+  platform_owner: "Platform owner",
   super_admin: "Super admin",
   admin: "Admin",
   operations: "Operations",
@@ -65,6 +74,7 @@ const ROLE_LABELS: Record<string, string> = {
 function AdminLayout() {
   const navigate = useNavigate();
   const fetchAccess = useServerFn(getMyAccess);
+  const checkSession = useServerFn(verifyAdminSession);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-access"],
@@ -72,6 +82,17 @@ function AdminLayout() {
     retry: false,
     staleTime: 60_000,
   });
+
+  // A revoked administrator loses the portal on their next request, without
+  // waiting for the access token to expire. Enforced server-side.
+  const session = useQuery({
+    queryKey: ["admin-session"],
+    queryFn: () => checkSession(),
+    retry: false,
+    refetchOnWindowFocus: true,
+    staleTime: 30_000,
+  });
+  const revoked = session.data?.valid === false;
 
   const permissions = data?.permissions ?? [];
   const isStaff = permissions.length > 0;
@@ -97,6 +118,20 @@ function AdminLayout() {
     return (
       <div className="mx-auto max-w-lg px-5 py-24">
         <AdminError error={error} onRetry={() => void refetch()} />
+      </div>
+    );
+  }
+
+  if (revoked) {
+    return (
+      <div className="grid min-h-dvh place-items-center px-6 text-center">
+        <div className="max-w-sm">
+          <p className="font-display text-xl font-bold">Access revoked</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your administrator access has been revoked by the platform owner. Contact them if you
+            believe this is a mistake.
+          </p>
+        </div>
       </div>
     );
   }
