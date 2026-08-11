@@ -84,6 +84,26 @@ jobs:
       # SSR function can read them. `vercel env add` fails if the key already
       # exists, so each is removed first; both sides are tolerant of a missing key
       # on the very first run.
+      # Pin deployments to the project that owns speed-link-motion.vercel.app.
+      # Without this the CLI infers a target each run and deploys land on
+      # throwaway URLs while the alias keeps serving an old build.
+      # VERCEL_PROJECT_ID/ORG_ID secrets remain optional and take precedence.
+      - name: Link to the correct Vercel project
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -u
+          echo "::warning::PROJECTS >> $(vercel project ls --token "$VERCEL_TOKEN" 2>&1 | tr '\n' ' ' | cut -c1-400)"
+          if [ -n "${ORG_ID:-}" ] && [ -n "${PROJECT_ID:-}" ]; then
+            echo "Using VERCEL_ORG_ID/VERCEL_PROJECT_ID secrets."
+          else
+            vercel link --yes --project speed-link-motion --token "$VERCEL_TOKEN" \
+              && echo "::warning::LINKED >> speed-link-motion" \
+              || echo "::warning::LINK FAILED >> could not link to project speed-link-motion"
+          fi
+
       - name: Deploy prebuilt output to Vercel (production)
         id: deploy
         env:
@@ -149,6 +169,22 @@ jobs:
           url=$(vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "::warning::PRODUCTION URL >> $url"
+
+      # Belt and braces: point the production alias at the deployment we just
+      # made, in case the project's automatic alias did not follow.
+      - name: Point production alias at this deployment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DEPLOY_URL: ${{ steps.redeploy.outputs.url }}
+        run: |
+          set -u
+          if [ -z "${DEPLOY_URL:-}" ]; then
+            echo "::warning::ALIAS >> no deployment url available"; exit 0
+          fi
+          vercel alias set "$DEPLOY_URL" speed-link-motion.vercel.app --token "$VERCEL_TOKEN" \
+            && echo "::warning::ALIAS OK >> speed-link-motion.vercel.app -> $DEPLOY_URL" \
+            || echo "::warning::ALIAS FAILED >> could not alias $DEPLOY_URL"
+          echo "::warning::INSPECT >> $(vercel inspect speed-link-motion.vercel.app --token "$VERCEL_TOKEN" 2>&1 | tr '\n' ' ' | cut -c1-400)"
 
       - name: Summary
         run: |
