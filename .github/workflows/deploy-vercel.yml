@@ -1,0 +1,127 @@
+name: Deploy to Vercel
+
+# Deploys the Speed Link Express TanStack Start SSR application to Vercel
+# WITHOUT the Vercel GitHub App integration.
+#
+# How it works:
+#   1. Build here in CI, producing Vercel Build Output API v3 in .vercel/output
+#      (Nitro emits this when NITRO_PRESET=vercel).
+#   2. Upload that prebuilt output with `vercel deploy --prebuilt --prod`.
+#
+# Why build here rather than on Vercel: the VITE_* values are inlined into the
+# client bundle at build time, so they must be present during the build step.
+# Sourcing them from GitHub Secrets keeps them out of the repository.
+#
+# Every credential is read from GitHub Actions Secrets. No values are stored here.
+
+on:
+  push:
+    branches: [main]
+  # Allows a deployment to be triggered manually from the GitHub web UI or
+  # mobile browser, without needing a new commit.
+  workflow_dispatch:
+
+# Never run two production deployments at once; cancel a superseded run.
+concurrency:
+  group: vercel-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy (production)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # Consumed directly by the Vercel CLI to identify the target project.
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build production bundle
+        env:
+          # Tells Nitro to emit Vercel Build Output API v3 (.vercel/output).
+          # On Vercel's own builders this is auto-detected; in GitHub Actions
+          # it must be set explicitly.
+          NITRO_PRESET: vercel
+          # Inlined into the client bundle at build time.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          # Read at runtime by SSR and server functions.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: npm run build
+
+      - name: Verify Vercel build output
+        run: |
+          if [ ! -d .vercel/output/functions/__server.func ]; then
+            echo "::error::Expected .vercel/output/functions/__server.func was not produced."
+            echo "The SSR function is missing - the Nitro preset may not have applied."
+            ls -R .vercel/output 2>/dev/null || echo "No .vercel/output directory at all."
+            exit 1
+          fi
+          echo "Build Output API v3 verified:"
+          ls .vercel/output
+          ls .vercel/output/functions
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # The runtime environment variables are pushed to the Vercel project so the
+      # SSR function can read them. `vercel env add` fails if the key already
+      # exists, so each is removed first; both sides are tolerant of a missing key
+      # on the very first run.
+      - name: Sync runtime environment variables to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -u
+          sync_var() {
+            name="$1"
+            value="$2"
+            vercel env rm "$name" production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            printf '%s' "$value" | vercel env add "$name" production --token "$VERCEL_TOKEN" >/dev/null 2>&1 \
+              && echo "synced $name" \
+              || echo "::warning::Could not sync $name; set it manually in Vercel project settings."
+          }
+          sync_var SUPABASE_URL "$SUPABASE_URL"
+          sync_var SUPABASE_PUBLISHABLE_KEY "$SUPABASE_PUBLISHABLE_KEY"
+
+      - name: Deploy prebuilt output to Vercel (production)
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          url=$(vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to: $url"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Vercel production deployment"
+            echo ""
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- URL: ${{ steps.deploy.outputs.url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
