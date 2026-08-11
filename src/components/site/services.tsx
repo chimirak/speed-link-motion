@@ -1,5 +1,13 @@
 import { motion } from "motion/react";
-import { Truck, Plane, Building2, Snowflake, FileText, PackageOpen, ArrowUpRight } from "lucide-react";
+import {
+  Truck,
+  Plane,
+  Building2,
+  Snowflake,
+  FileText,
+  PackageOpen,
+  ArrowUpRight,
+} from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
 
 const services = [

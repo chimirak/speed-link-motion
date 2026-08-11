@@ -69,7 +69,10 @@ function SupportPage() {
           }}
         >
           <div>
-            <label htmlFor="subject" className="text-xs tracking-widest text-muted-foreground uppercase">
+            <label
+              htmlFor="subject"
+              className="text-xs tracking-widest text-muted-foreground uppercase"
+            >
               Subject
             </label>
             <input
@@ -81,7 +84,10 @@ function SupportPage() {
             />
           </div>
           <div>
-            <label htmlFor="body" className="text-xs tracking-widest text-muted-foreground uppercase">
+            <label
+              htmlFor="body"
+              className="text-xs tracking-widest text-muted-foreground uppercase"
+            >
               How can we help?
             </label>
             <textarea

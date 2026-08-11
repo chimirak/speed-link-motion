@@ -19,8 +19,8 @@ export function PortalShell({
 }: {
   items: PortalNavItem[];
   title: string;
-  subtitle?: string;
-  badge?: string;
+  subtitle?: string | undefined;
+  badge?: string | undefined;
   children: ReactNode;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -119,7 +119,7 @@ export function StatCard({
 }: {
   label: string;
   value: string | number;
-  hint?: string;
+  hint?: string | undefined;
 }) {
   return (
     <div className="rounded-[1.5rem] surface-card p-6">

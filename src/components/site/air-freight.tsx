@@ -23,7 +23,11 @@ export function AirFreight() {
   const y = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
 
   return (
-    <section id="air-freight" ref={ref} className="relative overflow-hidden bg-ink text-ink-foreground">
+    <section
+      id="air-freight"
+      ref={ref}
+      className="relative overflow-hidden bg-ink text-ink-foreground"
+    >
       <div className="grid-lines-ink absolute inset-0" aria-hidden="true" />
 
       <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-24 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-32">

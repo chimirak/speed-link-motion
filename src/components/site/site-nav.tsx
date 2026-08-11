@@ -128,8 +128,18 @@ const nav: MenuDef[] = [
     items: [
       { label: "About us", to: "/about", desc: "Who we are and how we operate.", icon: Users },
       { label: "Blog", to: "/blog", desc: "Logistics insight and network news.", icon: Newspaper },
-      { label: "Careers", to: "/careers", desc: "Drive, coordinate, build with us.", icon: Briefcase },
-      { label: "FAQs", to: "/faqs", desc: "Answers on timings, customs and claims.", icon: HelpCircle },
+      {
+        label: "Careers",
+        to: "/careers",
+        desc: "Drive, coordinate, build with us.",
+        icon: Briefcase,
+      },
+      {
+        label: "FAQs",
+        to: "/faqs",
+        desc: "Answers on timings, customs and claims.",
+        icon: HelpCircle,
+      },
     ],
   },
   { label: "Contact", to: "/contact" },

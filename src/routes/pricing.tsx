@@ -88,21 +88,32 @@ function PricingPage() {
               >
                 <p className="text-[11px] tracking-[0.24em] text-primary uppercase">{t.name}</p>
                 <p className="numeric mt-5 text-4xl font-bold">{t.price}</p>
-                <p className={`mt-1 text-xs ${t.featured ? "text-ink-muted" : "text-muted-foreground"}`}>
+                <p
+                  className={`mt-1 text-xs ${t.featured ? "text-ink-muted" : "text-muted-foreground"}`}
+                >
                   {t.unit}
                 </p>
-                <p className={`mt-5 text-sm leading-relaxed ${t.featured ? "text-ink-muted" : "text-muted-foreground"}`}>
+                <p
+                  className={`mt-5 text-sm leading-relaxed ${t.featured ? "text-ink-muted" : "text-muted-foreground"}`}
+                >
                   {t.body}
                 </p>
                 <ul className="mt-7 space-y-3 text-sm">
                   {t.features.map((f) => (
                     <li key={f} className="flex gap-3">
                       <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                      <span className={t.featured ? "text-ink-muted" : "text-muted-foreground"}>{f}</span>
+                      <span className={t.featured ? "text-ink-muted" : "text-muted-foreground"}>
+                        {f}
+                      </span>
                     </li>
                   ))}
                 </ul>
-                <Button asChild variant={t.featured ? "speed" : "outline"} size="pill-lg" className="mt-8 w-full">
+                <Button
+                  asChild
+                  variant={t.featured ? "speed" : "outline"}
+                  size="pill-lg"
+                  className="mt-8 w-full"
+                >
                   <Link to={t.name === "On demand" ? "/book" : "/contact"}>
                     {t.name === "On demand" ? "Book now" : "Talk to sales"}
                   </Link>

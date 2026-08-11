@@ -38,7 +38,10 @@ const values = [
 
 const timeline = [
   { year: "2011", body: "Founded in Farnborough with two dedicated vans and a same-day promise." },
-  { year: "2015", body: "First international air express desk opened; customs brokerage brought in-house." },
+  {
+    year: "2015",
+    body: "First international air express desk opened; customs brokerage brought in-house.",
+  },
   { year: "2019", body: "Warehousing and fulfilment launched at The Hub, Fowler Avenue." },
   { year: "2022", body: "Ocean freight and full container load services added across UK ports." },
   { year: "2025", body: "Corporate flight booking introduced alongside freight accounts." },

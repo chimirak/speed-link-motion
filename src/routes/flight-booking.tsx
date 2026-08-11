@@ -17,10 +17,22 @@ export const Route = createFileRoute("/flight-booking")({
 });
 
 const perks = [
-  { title: "Fare holds", body: "Hold a quoted fare while approvals go through, without losing the price." },
-  { title: "Visa guidance", body: "Documentation checks before you fly so nobody is turned away at the gate." },
-  { title: "24/7 rebooking", body: "One number to call when an itinerary breaks at midnight in another timezone." },
-  { title: "One invoice", body: "Travel and freight consolidated onto a single monthly account statement." },
+  {
+    title: "Fare holds",
+    body: "Hold a quoted fare while approvals go through, without losing the price.",
+  },
+  {
+    title: "Visa guidance",
+    body: "Documentation checks before you fly so nobody is turned away at the gate.",
+  },
+  {
+    title: "24/7 rebooking",
+    body: "One number to call when an itinerary breaks at midnight in another timezone.",
+  },
+  {
+    title: "One invoice",
+    body: "Travel and freight consolidated onto a single monthly account statement.",
+  },
 ];
 
 function FlightBookingPage() {

@@ -35,7 +35,12 @@ const empty: Form = {
   insurance: "Standard (£100)",
 };
 
-const methods = ["Same-day dedicated", "Next-flight-out air", "Economy air express", "Road freight"];
+const methods = [
+  "Same-day dedicated",
+  "Next-flight-out air",
+  "Economy air express",
+  "Road freight",
+];
 const insurances = ["Standard (£100)", "Extended (£1,000)", "Full value declared"];
 
 export function BookingWizard() {
@@ -53,7 +58,10 @@ export function BookingWizard() {
   }, [step, form]);
 
   const reference = useMemo(
-    () => `SLX-${Math.abs(hash(form.receiverName + form.senderName)).toString().slice(0, 8)}`,
+    () =>
+      `SLX-${Math.abs(hash(form.receiverName + form.senderName))
+        .toString()
+        .slice(0, 8)}`,
     [form.receiverName, form.senderName],
   );
 
@@ -66,8 +74,8 @@ export function BookingWizard() {
         <h2 className="mt-6 font-display text-2xl font-extrabold">Booking request received</h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
           Your reference is <span className="numeric font-bold text-foreground">{reference}</span>.
-          A coordinator will confirm collection and pricing by email at
-          Speedlinkcourier6@gmail.com within 30 minutes during operating hours.
+          A coordinator will confirm collection and pricing by email at Speedlinkcourier6@gmail.com
+          within 30 minutes during operating hours.
         </p>
         <Button
           variant="speed"
@@ -92,7 +100,9 @@ export function BookingWizard() {
           <li key={s} className="flex items-center gap-2">
             <span
               className={`grid size-7 place-items-center rounded-full text-xs font-bold transition-colors ${
-                i <= step ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                i <= step
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground"
               }`}
             >
               {i < step ? <Check className="size-3.5" /> : i + 1}
@@ -104,7 +114,9 @@ export function BookingWizard() {
             >
               {s}
             </span>
-            {i < steps.length - 1 && <span className="mx-2 h-px w-6 bg-border" aria-hidden="true" />}
+            {i < steps.length - 1 && (
+              <span className="mx-2 h-px w-6 bg-border" aria-hidden="true" />
+            )}
           </li>
         ))}
       </ol>
@@ -129,7 +141,11 @@ export function BookingWizard() {
             {step === 0 && (
               <>
                 <Field label="Sender name" value={form.senderName} onChange={set("senderName")} />
-                <Field label="Sender phone" value={form.senderPhone} onChange={set("senderPhone")} />
+                <Field
+                  label="Sender phone"
+                  value={form.senderPhone}
+                  onChange={set("senderPhone")}
+                />
                 <Field
                   label="Collection address"
                   value={form.senderAddress}
@@ -140,8 +156,16 @@ export function BookingWizard() {
             )}
             {step === 1 && (
               <>
-                <Field label="Receiver name" value={form.receiverName} onChange={set("receiverName")} />
-                <Field label="Receiver phone" value={form.receiverPhone} onChange={set("receiverPhone")} />
+                <Field
+                  label="Receiver name"
+                  value={form.receiverName}
+                  onChange={set("receiverName")}
+                />
+                <Field
+                  label="Receiver phone"
+                  value={form.receiverPhone}
+                  onChange={set("receiverPhone")}
+                />
                 <Field
                   label="Destination address"
                   value={form.receiverAddress}
@@ -153,15 +177,36 @@ export function BookingWizard() {
             {step === 2 && (
               <>
                 <Field label="Weight (kg)" value={form.weight} onChange={set("weight")} />
-                <Field label="Dimensions (cm)" value={form.dims} onChange={set("dims")} placeholder="40 × 30 × 20" />
+                <Field
+                  label="Dimensions (cm)"
+                  value={form.dims}
+                  onChange={set("dims")}
+                  placeholder="40 × 30 × 20"
+                />
                 <Field label="Contents" value={form.contents} onChange={set("contents")} full />
               </>
             )}
             {step === 3 && (
               <>
-                <Select label="Shipping method" value={form.method} onChange={set("method")} options={methods} />
-                <Select label="Insurance" value={form.insurance} onChange={set("insurance")} options={insurances} />
-                <Field label="Preferred pickup" value={form.pickupDate} onChange={set("pickupDate")} placeholder="Today, 14:00–16:00" full />
+                <Select
+                  label="Shipping method"
+                  value={form.method}
+                  onChange={set("method")}
+                  options={methods}
+                />
+                <Select
+                  label="Insurance"
+                  value={form.insurance}
+                  onChange={set("insurance")}
+                  options={insurances}
+                />
+                <Field
+                  label="Preferred pickup"
+                  value={form.pickupDate}
+                  onChange={set("pickupDate")}
+                  placeholder="Today, 14:00–16:00"
+                  full
+                />
               </>
             )}
             {step === 4 && (
@@ -174,7 +219,9 @@ export function BookingWizard() {
                   ["Pickup", form.pickupDate || "Next available"],
                 ].map(([k, v]) => (
                   <div key={k} className="grid gap-1 py-4 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                    <dt className="text-[11px] tracking-[0.2em] text-muted-foreground uppercase">{k}</dt>
+                    <dt className="text-[11px] tracking-[0.2em] text-muted-foreground uppercase">
+                      {k}
+                    </dt>
                     <dd className="text-sm">{v}</dd>
                   </div>
                 ))}
@@ -185,7 +232,12 @@ export function BookingWizard() {
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           {step > 0 && (
-            <Button type="button" variant="outline" size="pill-lg" onClick={() => setStep((s) => s - 1)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="pill-lg"
+              onClick={() => setStep((s) => s - 1)}
+            >
               <ArrowLeft className="size-4" /> Back
             </Button>
           )}

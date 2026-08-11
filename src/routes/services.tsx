@@ -50,15 +50,26 @@ function ServicesPage() {
             <table className="w-full min-w-[36rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-[11px] tracking-[0.2em] text-muted-foreground uppercase">
-                  <th scope="col" className="px-6 py-4 font-medium">Service</th>
-                  <th scope="col" className="px-6 py-4 font-medium">Lead time</th>
-                  <th scope="col" className="px-6 py-4 font-medium">Coverage</th>
+                  <th scope="col" className="px-6 py-4 font-medium">
+                    Service
+                  </th>
+                  <th scope="col" className="px-6 py-4 font-medium">
+                    Lead time
+                  </th>
+                  <th scope="col" className="px-6 py-4 font-medium">
+                    Coverage
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {matrix.map((r) => (
-                  <tr key={r.service} className="border-b border-border last:border-b-0 transition-colors hover:bg-secondary">
-                    <th scope="row" className="px-6 py-5 font-display font-bold">{r.service}</th>
+                  <tr
+                    key={r.service}
+                    className="border-b border-border last:border-b-0 transition-colors hover:bg-secondary"
+                  >
+                    <th scope="row" className="px-6 py-5 font-display font-bold">
+                      {r.service}
+                    </th>
                     <td className="px-6 py-5 text-muted-foreground">{r.lead}</td>
                     <td className="px-6 py-5 text-muted-foreground">{r.cover}</td>
                   </tr>

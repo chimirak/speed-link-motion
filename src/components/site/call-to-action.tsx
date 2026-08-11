@@ -18,7 +18,6 @@ export function CallToAction() {
             />
             <div className="grid-lines-ink absolute inset-0" aria-hidden="true" />
 
-
             <div className="relative grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-end">
               <div>
                 <p className="text-xs tracking-[0.3em] text-primary uppercase">Get moving</p>
@@ -68,7 +67,6 @@ export function CallToAction() {
                     <div className="min-w-0">
                       <p className="text-xs tracking-widest text-ink-muted uppercase">
                         {item.label}
-
                       </p>
                       {item.href ? (
                         <a

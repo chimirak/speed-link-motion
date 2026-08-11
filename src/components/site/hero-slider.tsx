@@ -178,8 +178,7 @@ export function HeroSlider() {
               {slide.kicker}
             </p>
             <h1 className="mt-5 font-display text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.98] font-extrabold">
-              {slide.title}{" "}
-              <span className="text-gradient-speed">{slide.highlight}</span>
+              {slide.title} <span className="text-gradient-speed">{slide.highlight}</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-ink-muted sm:text-lg">
               {slide.copy}

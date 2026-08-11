@@ -1,40 +1,77 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, PackageCheck, MapPin, Warehouse, Plane, CheckCircle2 } from "lucide-react";
+import {
+  Search,
+  PackageCheck,
+  MapPin,
+  Warehouse,
+  Plane,
+  CheckCircle2,
+  Loader2,
+  PackageX,
+  AlertCircle,
+  Clock,
+  Ban,
+  PauseCircle,
+  Truck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
+import { Skeleton } from "@/components/ui/skeleton";
+import { trackShipment, type TrackingResult } from "@/lib/tracking.functions";
+import { statusLabel, serviceLabel, formatDate, formatDateTime } from "@/lib/logistics";
 
-type Step = {
-  icon: typeof MapPin;
-  title: string;
-  place: string;
-  time: string;
-  done: boolean;
+const STATUS_ICON: Record<string, typeof MapPin> = {
+  order_received: PackageCheck,
+  pickup_scheduled: Clock,
+  picked_up: PackageCheck,
+  at_sorting_facility: Warehouse,
+  in_transit: Plane,
+  arrived_at_destination: MapPin,
+  out_for_delivery: Truck,
+  delivered: CheckCircle2,
+  delivery_attempted: AlertCircle,
+  on_hold: PauseCircle,
+  cancelled: Ban,
 };
 
-const demoSteps: Step[] = [
-  { icon: PackageCheck, title: "Collected", place: "Farnborough, UK", time: "08:12", done: true },
-  { icon: Warehouse, title: "Sorted at hub", place: "Heathrow Gateway", time: "10:47", done: true },
-  { icon: Plane, title: "Departed", place: "LHR → JFK", time: "14:05", done: true },
-  { icon: MapPin, title: "Out for delivery", place: "Manhattan, NY", time: "09:30", done: false },
-  { icon: CheckCircle2, title: "Delivered", place: "Awaiting signature", time: "ETA 11:15", done: false },
-];
+type View =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "found"; data: NonNullable<TrackingResult> }
+  | { kind: "notfound"; code: string }
+  | { kind: "error"; message: string };
+
+function routeOf(s: NonNullable<TrackingResult>["shipment"]) {
+  const from = [s.origin_city, s.origin_country].filter(Boolean).join(", ");
+  const to = [s.destination_city, s.destination_country].filter(Boolean).join(", ");
+  if (!from && !to) return null;
+  return `${from || "—"} → ${to || "—"}`;
+}
 
 export function TrackingSearch() {
   const [value, setValue] = useState("");
-  const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<View>({ kind: "idle" });
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const code = value.trim();
-    if (code.length < 6) {
-      setResult(null);
-      setError("Enter a tracking number with at least 6 characters.");
+    const code = value.trim().toUpperCase();
+    if (code.length < 5) {
+      setError("Enter a tracking number with at least 5 characters.");
       return;
     }
     setError(null);
-    setResult(code.toUpperCase());
+    setView({ kind: "loading" });
+    try {
+      const data = await trackShipment({ data: { trackingNumber: code } });
+      setView(data ? { kind: "found", data } : { kind: "notfound", code });
+    } catch {
+      setView({
+        kind: "error",
+        message: "We couldn't reach the tracking service. Please try again in a moment.",
+      });
+    }
   };
 
   return (
@@ -54,7 +91,7 @@ export function TrackingSearch() {
             <Reveal delay={0.16}>
               <p className="mt-5 max-w-md text-muted-foreground">
                 Every consignment carries a live scan trail. Enter your tracking number for
-                real-time status, proof of delivery and an accurate ETA.
+                real-time status, current location and an accurate ETA.
               </p>
             </Reveal>
 
@@ -71,19 +108,31 @@ export function TrackingSearch() {
                       name="tracking"
                       value={value}
                       onChange={(e) => setValue(e.target.value)}
-                      placeholder="e.g. SLC-4471-GB"
+                      placeholder="e.g. SLE-4471-GB"
                       autoComplete="off"
                       aria-describedby="tracking-help"
                       aria-invalid={error ? true : undefined}
                       className="numeric h-12 w-full min-w-0 bg-transparent text-base text-foreground uppercase placeholder:text-muted-foreground placeholder:normal-case focus:outline-none"
                     />
                   </div>
-                  <Button type="submit" variant="speed" size="pill" className="sm:min-w-36">
-                    Track parcel
+                  <Button
+                    type="submit"
+                    variant="speed"
+                    size="pill"
+                    className="sm:min-w-36"
+                    disabled={view.kind === "loading"}
+                  >
+                    {view.kind === "loading" ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Tracking…
+                      </>
+                    ) : (
+                      "Track parcel"
+                    )}
                   </Button>
                 </div>
                 <p id="tracking-help" className="mt-3 pl-1 text-xs text-muted-foreground">
-                  Demo mode — sample timeline shown for any valid-format reference.
+                  UK consignments start SLX, international start SLE.
                 </p>
                 <p role="status" aria-live="polite" className="min-h-5 pl-1 text-xs text-primary">
                   {error}
@@ -94,68 +143,185 @@ export function TrackingSearch() {
 
           <Reveal direction="left" delay={0.1}>
             <div className="relative rounded-[2rem] surface-card p-6 shadow-[var(--shadow-lift)] sm:p-8">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-                <div className="min-w-0">
-                  <p className="text-xs tracking-widest text-muted-foreground uppercase">
-                    Consignment
-                  </p>
-                  <p className="numeric truncate text-xl font-semibold">
-                    {result ?? "SLC-4471-GB"}
-                  </p>
+              {view.kind === "idle" && (
+                <div className="grid min-h-64 place-items-center text-center">
+                  <div>
+                    <span className="mx-auto grid size-12 place-items-center rounded-full bg-secondary text-muted-foreground">
+                      <Search className="size-5" aria-hidden="true" />
+                    </span>
+                    <p className="mt-4 font-medium">Track a consignment</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Enter your tracking number to see its live journey.
+                    </p>
+                  </div>
                 </div>
-                <span className="shrink-0 rounded-full bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary">
-                  In transit
-                </span>
-              </div>
+              )}
 
-              <ol className="mt-8 space-y-0">
-                <AnimatePresence initial={false}>
-                  {demoSteps.map((step, i) => (
-                    <motion.li
-                      key={step.title}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 * i, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                      className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 pb-7 last:pb-0"
-                    >
-                      {i < demoSteps.length - 1 && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute top-9 left-[17px] h-full w-px bg-border"
-                        >
-                          {step.done && (
-                            <motion.span
-                              initial={{ scaleY: 0 }}
-                              whileInView={{ scaleY: 1 }}
-                              viewport={{ once: true }}
-                              transition={{ duration: 0.7, delay: 0.15 * i }}
-                              className="block size-full origin-top bg-primary"
-                            />
-                          )}
-                        </span>
-                      )}
-                      <span
-                        className={`grid size-9 shrink-0 place-items-center rounded-full border ${
-                          step.done
-                            ? "border-primary/40 bg-primary text-primary-foreground"
-                            : "border-border bg-secondary text-muted-foreground"
-                        }`}
-                      >
-                        <step.icon className="size-4" aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{step.title}</span>
-                        <span className="block truncate text-sm text-muted-foreground">
-                          {step.place}
-                        </span>
-                      </span>
-                      <span className="numeric shrink-0 text-sm text-muted-foreground">
-                        {step.time}
-                      </span>
-                    </motion.li>
+              {view.kind === "loading" && (
+                <div className="space-y-6" aria-busy="true">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-6 w-44" />
+                    </div>
+                    <Skeleton className="h-7 w-24 rounded-full" />
+                  </div>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4">
+                      <Skeleton className="size-9 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
                   ))}
-                </AnimatePresence>
-              </ol>
+                </div>
+              )}
+
+              {view.kind === "notfound" && (
+                <div className="grid min-h-64 place-items-center text-center">
+                  <div>
+                    <span className="mx-auto grid size-12 place-items-center rounded-full bg-secondary text-muted-foreground">
+                      <PackageX className="size-5" aria-hidden="true" />
+                    </span>
+                    <p className="mt-4 font-medium">No consignment found</p>
+                    <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+                      We couldn&apos;t find{" "}
+                      <span className="numeric font-medium text-foreground">{view.code}</span>.
+                      Check the reference and try again, or contact support.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {view.kind === "error" && (
+                <div className="grid min-h-64 place-items-center text-center">
+                  <div>
+                    <span className="mx-auto grid size-12 place-items-center rounded-full bg-destructive/10 text-destructive">
+                      <AlertCircle className="size-5" aria-hidden="true" />
+                    </span>
+                    <p className="mt-4 font-medium">Tracking unavailable</p>
+                    <p className="mt-1 max-w-xs text-sm text-muted-foreground">{view.message}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => setView({ kind: "idle" })}
+                    >
+                      Try again
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {view.kind === "found" && (
+                <>
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                    <div className="min-w-0">
+                      <p className="text-xs tracking-widest text-muted-foreground uppercase">
+                        Consignment
+                      </p>
+                      <p className="numeric truncate text-xl font-semibold">
+                        {view.data.shipment.tracking_number}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary">
+                      {statusLabel(view.data.shipment.status)}
+                    </span>
+                  </div>
+
+                  <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-border py-4 text-sm">
+                    {routeOf(view.data.shipment) && (
+                      <div className="col-span-2 min-w-0">
+                        <dt className="text-xs text-muted-foreground">Route</dt>
+                        <dd className="truncate font-medium">{routeOf(view.data.shipment)}</dd>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <dt className="text-xs text-muted-foreground">Current location</dt>
+                      <dd className="truncate font-medium">
+                        {view.data.shipment.current_location ?? "—"}
+                      </dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-xs text-muted-foreground">Estimated delivery</dt>
+                      <dd className="truncate font-medium">
+                        {formatDate(view.data.shipment.estimated_delivery)}
+                      </dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-xs text-muted-foreground">Service</dt>
+                      <dd className="truncate font-medium">
+                        {serviceLabel(view.data.shipment.service_type)}
+                      </dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-xs text-muted-foreground">Pieces</dt>
+                      <dd className="numeric truncate font-medium">
+                        {view.data.shipment.quantity}
+                        {view.data.shipment.weight_kg != null &&
+                          ` · ${view.data.shipment.weight_kg} kg`}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  {view.data.events.length === 0 ? (
+                    <p className="mt-8 text-sm text-muted-foreground">
+                      This consignment has been booked. Scan milestones will appear here as it moves
+                      through our network.
+                    </p>
+                  ) : (
+                    <ol className="mt-8 space-y-0">
+                      <AnimatePresence initial={false}>
+                        {[...view.data.events].reverse().map((ev, i, arr) => {
+                          const Icon = STATUS_ICON[ev.status] ?? MapPin;
+                          const isLatest = i === 0;
+                          return (
+                            <motion.li
+                              key={ev.id}
+                              initial={{ opacity: 0, x: -12 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{
+                                delay: 0.06 * i,
+                                duration: 0.5,
+                                ease: [0.16, 1, 0.3, 1],
+                              }}
+                              className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 pb-7 last:pb-0"
+                            >
+                              {i < arr.length - 1 && (
+                                <span
+                                  aria-hidden="true"
+                                  className="absolute top-9 left-[17px] h-full w-px bg-border"
+                                />
+                              )}
+                              <span
+                                className={`grid size-9 shrink-0 place-items-center rounded-full border ${
+                                  isLatest
+                                    ? "border-primary/40 bg-primary text-primary-foreground"
+                                    : "border-border bg-secondary text-muted-foreground"
+                                }`}
+                              >
+                                <Icon className="size-4" aria-hidden="true" />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block truncate font-medium">
+                                  {statusLabel(ev.status)}
+                                </span>
+                                <span className="block truncate text-sm text-muted-foreground">
+                                  {ev.location ?? ev.description ?? "—"}
+                                </span>
+                              </span>
+                              <span className="numeric shrink-0 text-right text-xs text-muted-foreground">
+                                {formatDateTime(ev.occurred_at)}
+                              </span>
+                            </motion.li>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </ol>
+                  )}
+                </>
+              )}
             </div>
           </Reveal>
         </div>

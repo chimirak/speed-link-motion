@@ -73,7 +73,10 @@ export function RevealText({
   return (
     <span className={cn("inline-block", className)}>
       {words.map((word, i) => (
-        <span key={`${word}-${i}`} className="inline-block overflow-hidden pb-[0.08em] align-bottom">
+        <span
+          key={`${word}-${i}`}
+          className="inline-block overflow-hidden pb-[0.08em] align-bottom"
+        >
           <motion.span
             className={cn(
               "inline-block",

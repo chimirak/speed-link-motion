@@ -17,19 +17,55 @@ export const Route = createFileRoute("/careers")({
 });
 
 const roles = [
-  { title: "Same-day driver (Owner-driver)", type: "Full time · Farnborough", body: "Dedicated collections across the South East on a guaranteed weekly minimum." },
-  { title: "Operations coordinator", type: "Shift work · Farnborough", body: "Own consignments end to end on the 24/7 control tower desk." },
-  { title: "Customs specialist", type: "Full time · Farnborough", body: "Prepare and present documentation for air and ocean movements." },
-  { title: "Warehouse operative", type: "Full time · Farnborough", body: "Goods in, slotting, pick-and-pack and dispatch cut-off discipline." },
-  { title: "Account manager", type: "Full time · Hybrid", body: "Grow and retain business accounts across aerospace and healthcare." },
-  { title: "Software engineer", type: "Full time · Hybrid", body: "Build the tracking, booking and reporting tools the operation runs on." },
+  {
+    title: "Same-day driver (Owner-driver)",
+    type: "Full time · Farnborough",
+    body: "Dedicated collections across the South East on a guaranteed weekly minimum.",
+  },
+  {
+    title: "Operations coordinator",
+    type: "Shift work · Farnborough",
+    body: "Own consignments end to end on the 24/7 control tower desk.",
+  },
+  {
+    title: "Customs specialist",
+    type: "Full time · Farnborough",
+    body: "Prepare and present documentation for air and ocean movements.",
+  },
+  {
+    title: "Warehouse operative",
+    type: "Full time · Farnborough",
+    body: "Goods in, slotting, pick-and-pack and dispatch cut-off discipline.",
+  },
+  {
+    title: "Account manager",
+    type: "Full time · Hybrid",
+    body: "Grow and retain business accounts across aerospace and healthcare.",
+  },
+  {
+    title: "Software engineer",
+    type: "Full time · Hybrid",
+    body: "Build the tracking, booking and reporting tools the operation runs on.",
+  },
 ];
 
 const benefits = [
-  { title: "Paid properly", body: "Above-market base rates, overtime paid at premium and no unpaid waiting time." },
-  { title: "Real progression", body: "Coordinators become team leads and managers — most of our leadership started on a desk or in a van." },
-  { title: "Modern kit", body: "Handheld scanners, route tools and vehicles that are maintained, not tolerated." },
-  { title: "Family operation", body: "Farnborough-based, independently owned, and small enough that everyone knows your name." },
+  {
+    title: "Paid properly",
+    body: "Above-market base rates, overtime paid at premium and no unpaid waiting time.",
+  },
+  {
+    title: "Real progression",
+    body: "Coordinators become team leads and managers — most of our leadership started on a desk or in a van.",
+  },
+  {
+    title: "Modern kit",
+    body: "Handheld scanners, route tools and vehicles that are maintained, not tolerated.",
+  },
+  {
+    title: "Family operation",
+    body: "Farnborough-based, independently owned, and small enough that everyone knows your name.",
+  },
 ];
 
 function CareersPage() {

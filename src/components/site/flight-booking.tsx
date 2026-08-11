@@ -50,7 +50,9 @@ export function FlightBooking() {
                     onClick={() => setTrip(t)}
                     aria-pressed={trip === t}
                     className={`relative rounded-full px-4 py-2 text-sm transition-colors ${
-                      trip === t ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                      trip === t
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {trip === t && (
@@ -69,14 +71,26 @@ export function FlightBooking() {
                 className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4"
                 onSubmit={(e) => e.preventDefault()}
               >
-                <Field label="From" placeholder="London (LHR)" icon={<Plane className="size-4 -rotate-45" />} />
-                <Field label="To" placeholder="Dubai (DXB)" icon={<Plane className="size-4 rotate-45" />} />
+                <Field
+                  label="From"
+                  placeholder="London (LHR)"
+                  icon={<Plane className="size-4 -rotate-45" />}
+                />
+                <Field
+                  label="To"
+                  placeholder="Dubai (DXB)"
+                  icon={<Plane className="size-4 rotate-45" />}
+                />
                 <Field
                   label={trip === "One way" ? "Departure" : "Dates"}
                   placeholder="12 – 19 Jun"
                   icon={<CalendarDays className="size-4" />}
                 />
-                <Field label="Travellers" placeholder="1 adult" icon={<Users className="size-4" />} />
+                <Field
+                  label="Travellers"
+                  placeholder="1 adult"
+                  icon={<Users className="size-4" />}
+                />
 
                 <div className="sm:col-span-2 lg:col-span-4">
                   <Button type="submit" variant="speed" size="pill-lg" className="w-full sm:w-auto">
@@ -125,7 +139,9 @@ export function FlightBooking() {
                 className="size-full object-cover"
               />
               <figcaption className="absolute inset-x-4 bottom-4 rounded-2xl glass-ink p-5 text-ink-foreground">
-                <p className="text-[11px] tracking-[0.24em] uppercase opacity-70">Corporate travel</p>
+                <p className="text-[11px] tracking-[0.24em] uppercase opacity-70">
+                  Corporate travel
+                </p>
                 <p className="mt-2 font-display text-lg font-bold">
                   Fare holds, visa guidance and 24/7 rebooking when the itinerary breaks.
                 </p>

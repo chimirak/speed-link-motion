@@ -17,12 +17,30 @@ export const Route = createFileRoute("/solutions")({
 });
 
 const sectors = [
-  { title: "Aerospace & AOG", body: "Grounded aircraft parts moved on the next available uplift with full chain of custody." },
-  { title: "Healthcare & life science", body: "Temperature-controlled, validated packaging and time-definite clinical deliveries." },
-  { title: "Legal & financial", body: "Confidential documents, signature-only handover and audited delivery records." },
-  { title: "Manufacturing", body: "Line-stop prevention, inbound consolidation and scheduled milk runs." },
-  { title: "E-commerce & retail", body: "Pick-and-pack fulfilment, label printing and managed returns." },
-  { title: "Events & media", body: "Fragile kit, tight get-in windows and on-site waiting drivers." },
+  {
+    title: "Aerospace & AOG",
+    body: "Grounded aircraft parts moved on the next available uplift with full chain of custody.",
+  },
+  {
+    title: "Healthcare & life science",
+    body: "Temperature-controlled, validated packaging and time-definite clinical deliveries.",
+  },
+  {
+    title: "Legal & financial",
+    body: "Confidential documents, signature-only handover and audited delivery records.",
+  },
+  {
+    title: "Manufacturing",
+    body: "Line-stop prevention, inbound consolidation and scheduled milk runs.",
+  },
+  {
+    title: "E-commerce & retail",
+    body: "Pick-and-pack fulfilment, label printing and managed returns.",
+  },
+  {
+    title: "Events & media",
+    body: "Fragile kit, tight get-in windows and on-site waiting drivers.",
+  },
 ];
 
 function SolutionsPage() {

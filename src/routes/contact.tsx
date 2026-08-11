@@ -158,7 +158,10 @@ function Field({
 }) {
   return (
     <div className={full ? "sm:col-span-2" : undefined}>
-      <label htmlFor={name} className="text-[11px] tracking-[0.2em] text-muted-foreground uppercase">
+      <label
+        htmlFor={name}
+        className="text-[11px] tracking-[0.2em] text-muted-foreground uppercase"
+      >
         {label}
       </label>
       <input

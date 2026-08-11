@@ -2,12 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateTrackingNumber } from "@/lib/logistics";
 
-
 /** Drops undefined keys so inserts satisfy exactOptionalPropertyTypes. */
-function clean<T extends Record<string, unknown>>(obj: T): { [K in keyof T]-?: Exclude<T[K], undefined> } {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([, v]) => v !== undefined),
-  ) as { [K in keyof T]-?: Exclude<T[K], undefined> };
+function clean<T extends Record<string, unknown>>(
+  obj: T,
+): { [K in keyof T]-?: Exclude<T[K], undefined> } {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as {
+    [K in keyof T]-?: Exclude<T[K], undefined>;
+  };
 }
 
 export const getMyRoles = createServerFn({ method: "GET" })
@@ -33,7 +34,9 @@ export const getMyProfile = createServerFn({ method: "GET" })
 
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { full_name?: string | undefined; phone?: string | undefined; company?: string }) => d)
+  .inputValidator(
+    (d: { full_name?: string | undefined; phone?: string | undefined; company?: string }) => d,
+  )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("profiles")

@@ -1,63 +1,234 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import type { ShipmentStatus } from "@/lib/logistics";
 
-/** Throws unless the caller holds a staff role. Uses the caller's own client (RLS). */
-async function assertStaff(context: { supabase: any; userId: string }) {
+type Ctx = { supabase: SupabaseClient<Database>; userId: string };
+
+export const PERMISSIONS = [
+  "shipments.read",
+  "shipments.write",
+  "tracking.write",
+  "customers.read",
+  "invoices.read",
+  "invoices.write",
+  "support.read",
+  "support.write",
+  "flights.read",
+  "flights.write",
+  "cms.write",
+  "analytics.read",
+  "audit.read",
+  "staff.manage",
+  "settings.write",
+] as const;
+export type Permission = (typeof PERMISSIONS)[number];
+
+const ROLE_PERMISSIONS: Record<string, Permission[]> = {
+  super_admin: [...PERMISSIONS],
+  admin: PERMISSIONS.filter((p) => p !== "staff.manage"),
+  operations: [
+    "shipments.read",
+    "shipments.write",
+    "tracking.write",
+    "customers.read",
+    "flights.read",
+    "flights.write",
+    "analytics.read",
+  ],
+  support: [
+    "support.read",
+    "support.write",
+    "customers.read",
+    "shipments.read",
+    "invoices.read",
+    "flights.read",
+  ],
+  content_manager: ["cms.write"],
+  staff: ["shipments.read"],
+  customer: [],
+};
+
+export function permissionsForRoles(roles: string[]): Permission[] {
+  const set = new Set<Permission>();
+  for (const r of roles) for (const p of ROLE_PERMISSIONS[r] ?? []) set.add(p);
+  return [...set];
+}
+
+async function rolesOf(context: Ctx): Promise<string[]> {
   const { data } = await context.supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", context.userId);
-  const roles = (data ?? []).map((r: { role: string }) => r.role);
-  const staff = ["super_admin", "admin", "operations", "support", "content_manager", "staff"];
-  if (!roles.some((r: string) => staff.includes(r))) throw new Error("Forbidden");
-  return roles as string[];
+  return (data ?? []).map((r) => r.role as string);
 }
+
+/**
+ * Server-side authorisation gate. This mirrors the database permission model —
+ * RLS remains the real enforcement boundary, this just fails fast with a clear
+ * error instead of returning empty result sets.
+ */
+async function requirePermission(context: Ctx, perm: Permission): Promise<string[]> {
+  const roles = await rolesOf(context);
+  if (!permissionsForRoles(roles).includes(perm)) {
+    throw new Error(`Forbidden: ${perm} required`);
+  }
+  return roles;
+}
+
+/** Roles + derived permissions for the signed-in staff member. */
+export const getMyAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const roles = await rolesOf(context);
+    return { roles, permissions: permissionsForRoles(roles) };
+  });
+
+/* ------------------------------- DASHBOARD ------------------------------- */
 
 export const getAdminOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertStaff(context);
-    const [shipments, tickets, flights, invoices, posts] = await Promise.all([
-      context.supabase
-        .from("shipments")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200),
-      context.supabase
-        .from("support_tickets")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      context.supabase
-        .from("flight_bookings")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      context.supabase
-        .from("invoices")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      context.supabase
-        .from("blog_posts")
-        .select("id, title, slug, published, published_at, created_at")
-        .order("created_at", { ascending: false })
-        .limit(50),
+    const roles = await rolesOf(context);
+    const perms = permissionsForRoles(roles);
+    if (perms.length === 0) throw new Error("Forbidden");
+
+    const [shipments, tickets, flights, invoices, customers] = await Promise.all([
+      perms.includes("shipments.read")
+        ? context.supabase
+            .from("shipments")
+            .select(
+              "id,status,created_at,tracking_number,receiver_city,receiver_country,sender_city,sender_country",
+            )
+            .order("created_at", { ascending: false })
+            .limit(500)
+        : Promise.resolve({ data: [] }),
+      perms.includes("support.read")
+        ? context.supabase
+            .from("support_tickets")
+            .select("id,status,priority,subject,reference,created_at")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        : Promise.resolve({ data: [] }),
+      perms.includes("flights.read")
+        ? context.supabase
+            .from("flight_bookings")
+            .select("id,status,origin,destination,depart_date,reference,created_at")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        : Promise.resolve({ data: [] }),
+      perms.includes("invoices.read")
+        ? context.supabase
+            .from("invoices")
+            .select("id,status,total,currency,invoice_number,created_at")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        : Promise.resolve({ data: [] }),
+      perms.includes("customers.read")
+        ? context.supabase.from("profiles").select("id,created_at").limit(1000)
+        : Promise.resolve({ data: [] }),
     ]);
+
     return {
+      permissions: perms,
+      roles,
       shipments: shipments.data ?? [],
       tickets: tickets.data ?? [],
       flights: flights.data ?? [],
       invoices: invoices.data ?? [],
-      posts: posts.data ?? [],
+      customers: customers.data ?? [],
     };
   });
+
+/* ------------------------------- SHIPMENTS ------------------------------- */
+
+export const getAdminShipments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requirePermission(context, "shipments.read");
+    const { data } = await context.supabase
+      .from("shipments")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    return data ?? [];
+  });
+
+export const getShipmentDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { shipmentId: string }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "shipments.read");
+    const [shipment, events] = await Promise.all([
+      context.supabase.from("shipments").select("*").eq("id", data.shipmentId).maybeSingle(),
+      context.supabase
+        .from("tracking_events")
+        .select("*")
+        .eq("shipment_id", data.shipmentId)
+        .order("occurred_at", { ascending: false }),
+    ]);
+    return { shipment: shipment.data, events: events.data ?? [] };
+  });
+
+export const updateShipmentStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      shipmentId: string;
+      status: ShipmentStatus;
+      location?: string | undefined;
+      description?: string | undefined;
+      estimated_delivery?: string | undefined;
+      isPublic?: boolean | undefined;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "tracking.write");
+
+    const patch: Record<string, unknown> = { status: data.status };
+    if (data.location) patch["current_location"] = data.location;
+    if (data.estimated_delivery) patch["estimated_delivery"] = data.estimated_delivery;
+
+    const { error: upErr } = await context.supabase
+      .from("shipments")
+      .update(patch as never)
+      .eq("id", data.shipmentId);
+    if (upErr) throw new Error(upErr.message);
+
+    const { error: evErr } = await context.supabase.from("tracking_events").insert({
+      shipment_id: data.shipmentId,
+      status: data.status,
+      location: data.location ?? null,
+      description: data.description ?? null,
+      is_public: data.isPublic ?? true,
+      created_by: context.userId,
+    });
+    if (evErr) throw new Error(evErr.message);
+
+    return { ok: true };
+  });
+
+export const createAdminShipment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: Record<string, unknown>) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "shipments.write");
+    const { data: row, error } = await context.supabase
+      .from("shipments")
+      .insert(data as never)
+      .select("id, tracking_number")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+/* ------------------------------- CUSTOMERS ------------------------------- */
 
 export const getAdminCustomers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertStaff(context);
+    await requirePermission(context, "customers.read");
     const [profiles, roles] = await Promise.all([
       context.supabase
         .from("profiles")
@@ -69,78 +240,237 @@ export const getAdminCustomers = createServerFn({ method: "GET" })
     return { profiles: profiles.data ?? [], roles: roles.data ?? [] };
   });
 
-export const updateShipmentStatus = createServerFn({ method: "POST" })
+/* --------------------------------- STAFF --------------------------------- */
+
+export const assignStaffRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (d: { shipmentId: string; status: ShipmentStatus; location?: string; description?: string }) => d,
-  )
+  .inputValidator((d: { targetUserId: string; role: string }) => d)
   .handler(async ({ data, context }) => {
-    await assertStaff(context);
-
-    const { error } = await context.supabase
-      .from("shipments")
-      .update({
-        status: data.status,
-        current_location: data.location || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", data.shipmentId);
+    await requirePermission(context, "staff.manage");
+    // assign_role() re-checks permission, blocks self-modification, and audits.
+    const { error } = await context.supabase.rpc("assign_role", {
+      _target: data.targetUserId,
+      _role: data.role as Database["public"]["Enums"]["app_role"],
+    });
     if (error) throw new Error(error.message);
-
-    await context.supabase.from("tracking_events").insert({
-      shipment_id: data.shipmentId,
-      status: data.status,
-      location: data.location || null,
-      description: data.description || null,
-      created_by: context.userId,
-    });
-
-    const { data: shipment } = await context.supabase
-      .from("shipments")
-      .select("user_id, tracking_number")
-      .eq("id", data.shipmentId)
-      .maybeSingle();
-
-    if (shipment?.user_id) {
-      await context.supabase.from("notifications").insert({
-        user_id: shipment.user_id,
-        title: `${shipment.tracking_number} status updated`,
-        body: data.description || data.status,
-        link: `/tracking?ref=${shipment.tracking_number}`,
-      });
-    }
-
-    await context.supabase.from("audit_logs").insert({
-      actor_id: context.userId,
-      action: "shipment.status_updated",
-      entity: "shipments",
-      entity_id: data.shipmentId,
-      metadata: { status: data.status },
-    });
-
     return { ok: true };
   });
 
-export const getAdminAuditLogs = createServerFn({ method: "GET" })
+export const revokeStaffRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { targetUserId: string; role: string }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "staff.manage");
+    // revoke_role() blocks self-demotion and removal of the last super_admin.
+    const { error } = await context.supabase.rpc("revoke_role", {
+      _target: data.targetUserId,
+      _role: data.role as Database["public"]["Enums"]["app_role"],
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* -------------------------------- INVOICES -------------------------------- */
+
+export const getAdminInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertStaff(context);
+    await requirePermission(context, "invoices.read");
+    const [invoices, items] = await Promise.all([
+      context.supabase
+        .from("invoices")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(300),
+      context.supabase.from("invoice_items").select("*"),
+    ]);
+    return { invoices: invoices.data ?? [], items: items.data ?? [] };
+  });
+
+export const saveInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      id?: string | undefined;
+      user_id?: string | undefined;
+      shipment_id?: string | undefined;
+      status: string;
+      currency: string;
+      tax: number;
+      notes?: string | undefined;
+      due_at?: string | undefined;
+      items: Array<{ description: string; quantity: number; unit_price: number }>;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "invoices.write");
+
+    const subtotal = data.items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+    const total = subtotal + (data.tax || 0);
+
+    let invoiceId = data.id;
+
+    if (invoiceId) {
+      const { error } = await context.supabase
+        .from("invoices")
+        .update({
+          status: data.status,
+          currency: data.currency,
+          tax: data.tax,
+          subtotal,
+          total,
+          notes: data.notes ?? null,
+          due_at: data.due_at ?? null,
+        })
+        .eq("id", invoiceId);
+      if (error) throw new Error(error.message);
+      await context.supabase.from("invoice_items").delete().eq("invoice_id", invoiceId);
+    } else {
+      const { data: num, error: numErr } = await context.supabase.rpc("next_invoice_number");
+      if (numErr) throw new Error(numErr.message);
+      const { data: row, error } = await context.supabase
+        .from("invoices")
+        .insert({
+          invoice_number: num as unknown as string,
+          user_id: data.user_id ?? null,
+          shipment_id: data.shipment_id ?? null,
+          status: data.status,
+          currency: data.currency,
+          tax: data.tax,
+          subtotal,
+          total,
+          notes: data.notes ?? null,
+          issued_at: new Date().toISOString().slice(0, 10),
+          due_at: data.due_at ?? null,
+        })
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      invoiceId = row.id;
+    }
+
+    if (data.items.length > 0) {
+      const { error } = await context.supabase.from("invoice_items").insert(
+        data.items.map((i) => ({
+          invoice_id: invoiceId!,
+          description: i.description,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+        })),
+      );
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true, id: invoiceId };
+  });
+
+/* -------------------------------- SUPPORT --------------------------------- */
+
+export const getAdminTickets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requirePermission(context, "support.read");
     const { data } = await context.supabase
-      .from("audit_logs")
+      .from("support_tickets")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(300);
     return data ?? [];
   });
+
+export const getAdminTicketMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { ticketId: string }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "support.read");
+    const { data: rows } = await context.supabase
+      .from("support_messages")
+      .select("*")
+      .eq("ticket_id", data.ticketId)
+      .order("created_at", { ascending: true });
+    return rows ?? [];
+  });
+
+export const replyToTicketAsStaff = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { ticketId: string; body: string; isInternal?: boolean | undefined }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "support.write");
+    const body = data.body.trim().slice(0, 5000);
+    if (!body) throw new Error("Message cannot be empty");
+    const { error } = await context.supabase.from("support_messages").insert({
+      ticket_id: data.ticketId,
+      sender_id: context.userId,
+      body,
+      is_internal: data.isInternal ?? false,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateTicketStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { ticketId: string; status: string; assignToMe?: boolean | undefined }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "support.write");
+    const patch: Record<string, unknown> = { status: data.status };
+    if (data.assignToMe) patch["assigned_to"] = context.userId;
+    const { error } = await context.supabase
+      .from("support_tickets")
+      .update(patch as never)
+      .eq("id", data.ticketId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* -------------------------------- FLIGHTS --------------------------------- */
+
+export const getAdminFlights = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requirePermission(context, "flights.read");
+    const { data } = await context.supabase
+      .from("flight_bookings")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    return data ?? [];
+  });
+
+export const updateFlightStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      bookingId: string;
+      status: string;
+      quoted_amount?: number | undefined;
+      staff_notes?: string | undefined;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "flights.write");
+    const patch: Record<string, unknown> = { status: data.status };
+    if (data.quoted_amount != null) patch["quoted_amount"] = data.quoted_amount;
+    if (data.staff_notes != null) patch["staff_notes"] = data.staff_notes;
+    const { error } = await context.supabase
+      .from("flight_bookings")
+      .update(patch as never)
+      .eq("id", data.bookingId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ---------------------------------- CMS ----------------------------------- */
 
 export const getAdminPosts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertStaff(context);
+    await requirePermission(context, "cms.write");
     const { data } = await context.supabase
       .from("blog_posts")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(200);
     return data ?? [];
   });
 
@@ -148,32 +478,34 @@ export const savePost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (d: {
-      id?: string;
-      slug: string;
+      id?: string | undefined;
       title: string;
-      excerpt?: string;
-      body?: string;
-      cover_image?: string;
+      slug: string;
+      excerpt?: string | undefined;
+      body?: string | undefined;
+      cover_image?: string | undefined;
       published: boolean;
     }) => d,
   )
   .handler(async ({ data, context }) => {
-    await assertStaff(context);
+    await requirePermission(context, "cms.write");
     const payload = {
-      slug: data.slug,
-      title: data.title,
-      excerpt: data.excerpt ?? null,
+      title: data.title.trim().slice(0, 200),
+      slug: data.slug
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-")
+        .slice(0, 120),
+      excerpt: data.excerpt?.slice(0, 500) ?? null,
       body: data.body ?? null,
       cover_image: data.cover_image ?? null,
       published: data.published,
       published_at: data.published ? new Date().toISOString() : null,
       author_id: context.userId,
-      updated_at: new Date().toISOString(),
     };
-    const query = data.id
-      ? context.supabase.from("blog_posts").update(payload).eq("id", data.id)
-      : context.supabase.from("blog_posts").insert(payload);
-    const { error } = await query;
+    const { error } = data.id
+      ? await context.supabase.from("blog_posts").update(payload).eq("id", data.id)
+      : await context.supabase.from("blog_posts").insert(payload);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -182,7 +514,7 @@ export const deletePost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data, context }) => {
-    await assertStaff(context);
+    await requirePermission(context, "cms.write");
     const { error } = await context.supabase.from("blog_posts").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -191,7 +523,7 @@ export const deletePost = createServerFn({ method: "POST" })
 export const getAdminSlides = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertStaff(context);
+    await requirePermission(context, "cms.write");
     const { data } = await context.supabase
       .from("hero_slides")
       .select("*")
@@ -203,52 +535,78 @@ export const saveSlide = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (d: {
-      id?: string;
-      kicker?: string;
+      id?: string | undefined;
       title: string;
-      highlight?: string;
-      copy?: string;
-      image_url?: string;
-      sort_order?: number;
+      kicker?: string | undefined;
+      highlight?: string | undefined;
+      copy?: string | undefined;
+      image_url?: string | undefined;
+      primary_label?: string | undefined;
+      primary_url?: string | undefined;
+      sort_order: number;
       active: boolean;
     }) => d,
   )
   .handler(async ({ data, context }) => {
-    await assertStaff(context);
-    const { id, ...payload } = data;
-    const query = id
-      ? context.supabase
-          .from("hero_slides")
-          .update({ ...payload, updated_at: new Date().toISOString() })
-          .eq("id", id)
-      : context.supabase.from("hero_slides").insert(payload);
-    const { error } = await query;
+    await requirePermission(context, "cms.write");
+    const payload = {
+      title: data.title.trim().slice(0, 160),
+      kicker: data.kicker ?? null,
+      highlight: data.highlight ?? null,
+      copy: data.copy ?? null,
+      image_url: data.image_url ?? null,
+      primary_label: data.primary_label ?? null,
+      primary_url: data.primary_url ?? null,
+      sort_order: data.sort_order,
+      active: data.active,
+    };
+    const { error } = data.id
+      ? await context.supabase.from("hero_slides").update(payload).eq("id", data.id)
+      : await context.supabase.from("hero_slides").insert(payload);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
-export const updateTicketStatus = createServerFn({ method: "POST" })
+export const deleteSlide = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { ticketId: string; status: string }) => d)
+  .inputValidator((d: { id: string }) => d)
   .handler(async ({ data, context }) => {
-    await assertStaff(context);
-    const { error } = await context.supabase
-      .from("support_tickets")
-      .update({ status: data.status, updated_at: new Date().toISOString() })
-      .eq("id", data.ticketId);
+    await requirePermission(context, "cms.write");
+    const { error } = await context.supabase.from("hero_slides").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
-export const updateFlightStatus = createServerFn({ method: "POST" })
+/* ------------------------------ AUDIT / SETTINGS --------------------------- */
+
+export const getAdminAuditLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { bookingId: string; status: string }) => d)
+  .handler(async ({ context }) => {
+    await requirePermission(context, "audit.read");
+    const { data } = await context.supabase
+      .from("audit_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    return data ?? [];
+  });
+
+export const getAdminSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requirePermission(context, "settings.write");
+    const { data } = await context.supabase.from("site_settings").select("*");
+    return data ?? [];
+  });
+
+export const saveSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { key: string; value: Record<string, unknown> }) => d)
   .handler(async ({ data, context }) => {
-    await assertStaff(context);
+    await requirePermission(context, "settings.write");
     const { error } = await context.supabase
-      .from("flight_bookings")
-      .update({ status: data.status, updated_at: new Date().toISOString() })
-      .eq("id", data.bookingId);
+      .from("site_settings")
+      .upsert({ key: data.key, value: data.value as never, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -65,8 +65,7 @@ const posts = [
   },
   {
     title: "Barcodes, scans and the truth about tracking gaps",
-    excerpt:
-      "Why a status can sit still for six hours while a consignment is moving at 500 knots.",
+    excerpt: "Why a status can sit still for six hours while a consignment is moving at 500 knots.",
     tag: "Technology",
     date: "17 February 2026",
     image: newsScan,

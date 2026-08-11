@@ -14,7 +14,6 @@ import { Partners } from "@/components/site/partners";
 import { News } from "@/components/site/news";
 import { CallToAction } from "@/components/site/call-to-action";
 
-
 const title = "Speed Link Express Logistics — Same-Day & Global Express Delivery";
 const description =
   "Time-critical courier and freight from Farnborough to 220+ countries. Live tracking, guaranteed timings, fully insured, 24/7 human support.";

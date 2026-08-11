@@ -2,9 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
+/**
+ * Anonymous Supabase client. It carries only the publishable key, and RLS
+ * denies `anon` on the shipments table outright. Public tracking therefore goes
+ * exclusively through the `track_shipment` RPC, a SECURITY DEFINER function that
+ * returns a whitelisted projection: no names, phones, emails, addresses or
+ * internal notes ever cross this boundary.
+ */
 function publicClient() {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-  const url = process.env["SUPABASE_URL"]!;
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  const url = process.env["SUPABASE_URL"];
+  if (!key || !url) throw new Error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: {
@@ -20,29 +28,33 @@ function publicClient() {
   });
 }
 
+export type PublicTrackingEvent = {
+  id: string;
+  status: string;
+  location: string | null;
+  description: string | null;
+  occurred_at: string;
+};
+
+export type PublicShipment = {
+  tracking_number: string;
+  status: string;
+  service_type: string;
+  origin_city: string | null;
+  origin_country: string | null;
+  destination_city: string | null;
+  destination_country: string | null;
+  current_location: string | null;
+  estimated_delivery: string | null;
+  package_type: string | null;
+  weight_kg: number | null;
+  quantity: number;
+  created_at: string;
+};
+
 export type TrackingResult = {
-  shipment: {
-    tracking_number: string;
-    status: string;
-    service_type: string;
-    sender_city: string | null;
-    sender_country: string | null;
-    receiver_city: string | null;
-    receiver_country: string | null;
-    current_location: string | null;
-    estimated_delivery: string | null;
-    weight_kg: number | null;
-    quantity: number;
-    package_type: string | null;
-    created_at: string;
-  };
-  events: Array<{
-    id: string;
-    status: string;
-    location: string | null;
-    description: string | null;
-    occurred_at: string;
-  }>;
+  shipment: PublicShipment;
+  events: PublicTrackingEvent[];
 } | null;
 
 export const trackShipment = createServerFn({ method: "GET" })
@@ -54,24 +66,16 @@ export const trackShipment = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data }): Promise<TrackingResult> => {
     if (data.trackingNumber.length < 5) return null;
+
     const supabase = publicClient();
+    const { data: result, error } = await supabase.rpc("track_shipment", {
+      _tracking_number: data.trackingNumber,
+    });
 
-    const { data: shipment } = await supabase
-      .from("shipments")
-      .select(
-        "id, tracking_number, status, service_type, sender_city, sender_country, receiver_city, receiver_country, current_location, estimated_delivery, weight_kg, quantity, package_type, created_at",
-      )
-      .eq("tracking_number", data.trackingNumber)
-      .maybeSingle();
-
-    if (!shipment) return null;
-
-    const { data: events } = await supabase
-      .from("tracking_events")
-      .select("id, status, location, description, occurred_at")
-      .eq("shipment_id", shipment.id)
-      .order("occurred_at", { ascending: true });
-
-    const { id: _id, ...rest } = shipment;
-    return { shipment: rest, events: events ?? [] };
+    if (error) {
+      console.error("[tracking] lookup failed:", error.message);
+      throw new Error("We could not reach the tracking service. Please try again.");
+    }
+    if (!result) return null;
+    return result as unknown as TrackingResult;
   });

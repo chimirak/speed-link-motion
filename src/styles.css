@@ -260,3 +260,32 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Print — used by the invoice document so customers and staff can produce a
+   PDF with the browser's own "Save as PDF". No third-party PDF service.
+   --------------------------------------------------------------------------- */
+@media print {
+  .print-hide {
+    display: none !important;
+  }
+
+  .print-surface {
+    max-width: none !important;
+    padding: 0 !important;
+    color: #000 !important;
+  }
+
+  /* Collapse app chrome so only the document prints. */
+  body {
+    background: #fff !important;
+  }
+
+  @page {
+    margin: 16mm;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}

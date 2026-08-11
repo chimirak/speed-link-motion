@@ -16,12 +16,30 @@ export const Route = createFileRoute("/coverage")({
 });
 
 const lanes = [
-  { title: "United Kingdom", body: "Same-day dedicated collection nationwide, with 60-minute response across the M3 and M4 corridors." },
-  { title: "Europe", body: "Road groupage and dedicated vans to all EU states, plus next-day air into major hubs." },
-  { title: "Middle East", body: "Daily uplift into Dubai, Doha and Riyadh with in-house customs documentation." },
-  { title: "North America", body: "Next-flight-out into JFK, ORD and LAX with bonded onward delivery." },
-  { title: "Asia Pacific", body: "Consolidated and express air into Singapore, Hong Kong, Shanghai and Sydney." },
-  { title: "Africa & LatAm", body: "Scheduled air and ocean services supported by vetted local delivery partners." },
+  {
+    title: "United Kingdom",
+    body: "Same-day dedicated collection nationwide, with 60-minute response across the M3 and M4 corridors.",
+  },
+  {
+    title: "Europe",
+    body: "Road groupage and dedicated vans to all EU states, plus next-day air into major hubs.",
+  },
+  {
+    title: "Middle East",
+    body: "Daily uplift into Dubai, Doha and Riyadh with in-house customs documentation.",
+  },
+  {
+    title: "North America",
+    body: "Next-flight-out into JFK, ORD and LAX with bonded onward delivery.",
+  },
+  {
+    title: "Asia Pacific",
+    body: "Consolidated and express air into Singapore, Hong Kong, Shanghai and Sydney.",
+  },
+  {
+    title: "Africa & LatAm",
+    body: "Scheduled air and ocean services supported by vetted local delivery partners.",
+  },
 ];
 
 function CoveragePage() {

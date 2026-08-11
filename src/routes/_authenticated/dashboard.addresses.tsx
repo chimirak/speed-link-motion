@@ -100,7 +100,10 @@ function AddressesPage() {
             ["country", "Country"],
           ].map(([key, label]) => (
             <div key={key}>
-              <label htmlFor={key} className="text-xs tracking-widest text-muted-foreground uppercase">
+              <label
+                htmlFor={key}
+                className="text-xs tracking-widest text-muted-foreground uppercase"
+              >
                 {label}
               </label>
               <input
