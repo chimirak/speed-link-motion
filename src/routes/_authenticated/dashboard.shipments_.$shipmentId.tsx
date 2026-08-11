@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, MapPin, PackageX, LifeBuoy } from "lucide-react";
+import { ArrowLeft, MapPin, PackageX, LifeBuoy, MessageCircle } from "lucide-react";
 import { getMyShipmentDetail } from "@/lib/portal.functions";
 import {
   AdminEmpty,
@@ -12,6 +12,7 @@ import {
 } from "@/components/portal/admin-ui";
 import { Button } from "@/components/ui/button";
 import { statusLabel, serviceLabel, formatDate, formatDateTime } from "@/lib/logistics";
+import { whatsappShipmentMessage, whatsappUrl } from "@/lib/brand";
 
 export const Route = createFileRoute("/_authenticated/dashboard/shipments_/$shipmentId")({
   head: () => ({ meta: [{ name: "robots", content: "noindex" }] }),
@@ -70,11 +71,22 @@ function ShipmentDetail() {
             <ArrowLeft className="size-3.5" /> Back to shipments
           </Link>
         </Button>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/dashboard/support">
-            <LifeBuoy className="size-3.5" /> Get help with this shipment
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <a
+              href={whatsappUrl(whatsappShipmentMessage(shipment.tracking_number))}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle className="size-3.5" /> WhatsApp support
+            </a>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/dashboard/support">
+              <LifeBuoy className="size-3.5" /> Get help with this shipment
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div>

@@ -5,8 +5,9 @@ import { toast } from "sonner";
 import { PageHero, Section } from "@/components/site/page-shell";
 import { Reveal } from "@/components/motion/reveal";
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Clock, ArrowRight } from "lucide-react";
+import { Mail, MapPin, Clock, ArrowRight, MessageCircle } from "lucide-react";
 import { pageHead } from "@/lib/seo";
+import { WHATSAPP_DEFAULT_MESSAGE, WHATSAPP_DISPLAY, whatsappUrl } from "@/lib/brand";
 
 export const Route = createFileRoute("/contact")({
   head: () =>
@@ -126,6 +127,24 @@ function ContactPage() {
                   >
                     Speedlinkcourier6@gmail.com
                   </a>
+                </div>
+                <div>
+                  <MessageCircle className="size-5 text-primary" aria-hidden="true" />
+                  <h2 className="mt-4 font-display text-lg font-bold">WhatsApp</h2>
+                  <p className="mt-2 text-sm text-ink-muted">
+                    Fastest route to a coordinator, day or night.
+                  </p>
+                  <Button asChild variant="outline" size="sm" className="mt-3">
+                    <a
+                      href={whatsappUrl(WHATSAPP_DEFAULT_MESSAGE)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="size-4" aria-hidden="true" />
+                      Chat with us
+                    </a>
+                  </Button>
+                  <p className="mt-2 text-xs text-ink-muted">{WHATSAPP_DISPLAY}</p>
                 </div>
                 <div>
                   <Clock className="size-5 text-primary" aria-hidden="true" />

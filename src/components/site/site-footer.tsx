@@ -1,5 +1,6 @@
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, MessageCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { WHATSAPP_DEFAULT_MESSAGE, WHATSAPP_DISPLAY, whatsappUrl } from "@/lib/brand";
 import logo from "@/assets/speedlink-mark.png";
 
 const columns = [
@@ -101,6 +102,18 @@ export function SiteFooter() {
                   className="break-all text-muted-foreground transition-colors hover:text-primary"
                 >
                   Speedlinkcourier6@gmail.com
+                </a>
+              </li>
+              <li className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+                <MessageCircle className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                <a
+                  href={whatsappUrl(WHATSAPP_DEFAULT_MESSAGE)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground transition-colors hover:text-primary"
+                >
+                  WhatsApp customer support
+                  <span className="block text-xs">{WHATSAPP_DISPLAY}</span>
                 </a>
               </li>
             </ul>
