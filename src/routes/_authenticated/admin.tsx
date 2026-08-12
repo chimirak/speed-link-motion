@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
@@ -20,7 +20,7 @@ import {
   Tags,
   Users,
 } from "lucide-react";
-import { PortalShell, type PortalNavItem } from "@/components/portal/portal-shell";
+import { ConsoleShell, type ConsoleNavItem } from "@/components/portal/console-shell";
 import { getMyAccess, verifyAdminSession, type Permission } from "@/lib/admin.functions";
 import { AdminError, Spinner } from "@/components/portal/admin-ui";
 
@@ -30,7 +30,7 @@ import { AdminError, Spinner } from "@/components/portal/admin-ui";
  * so an operations user simply never sees Blog or Staff. This is presentation
  * only — the server functions and RLS are the actual enforcement boundary.
  */
-type AdminNavItem = PortalNavItem & { permission: Permission };
+type AdminNavItem = ConsoleNavItem & { permission: Permission };
 
 const ADMIN_NAV: AdminNavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, permission: "shipments.read" },
@@ -96,6 +96,10 @@ function AdminLayout() {
   });
   const revoked = session.data?.valid === false;
 
+  const pathname = useRouterState({ select: (st) => st.location.pathname });
+  // Owner territory gets its own visual authority signal.
+  const isOwnerArea = pathname.startsWith("/admin/platform");
+
   const permissions = data?.permissions ?? [];
   const isStaff = permissions.length > 0;
 
@@ -155,8 +159,13 @@ function AdminLayout() {
   const topRole = (data?.roles ?? []).find((r) => r in ROLE_LABELS);
 
   return (
-    <PortalShell items={items} title="Operations" badge={topRole ? ROLE_LABELS[topRole] : "Staff"}>
+    <ConsoleShell
+      items={items}
+      title="Operations"
+      badge={topRole ? ROLE_LABELS[topRole] : "Staff"}
+      tone={isOwnerArea ? "owner" : "ops"}
+    >
       <Outlet />
-    </PortalShell>
+    </ConsoleShell>
   );
 }
