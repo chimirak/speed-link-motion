@@ -155,7 +155,22 @@ function AdminLayout() {
     );
   }
 
-  const items = ADMIN_NAV.filter((item) => permissions.includes(item.permission));
+  // Owner territory is a separate surface with its own navigation, not the
+  // operations nav in a different colour.
+  const OWNER_NAV: AdminNavItem[] = [
+    {
+      to: "/admin/platform",
+      label: "Platform control",
+      icon: Landmark,
+      permission: "platform.manage",
+    },
+    { to: "/admin/staff", label: "Administrators", icon: ShieldCheck, permission: "staff.manage" },
+    { to: "/admin/audit-logs", label: "Security log", icon: ScrollText, permission: "audit.read" },
+    { to: "/admin/settings", label: "System config", icon: Settings, permission: "settings.write" },
+  ];
+
+  const source = isOwnerArea ? OWNER_NAV : ADMIN_NAV;
+  const items = source.filter((item) => permissions.includes(item.permission));
   const topRole = (data?.roles ?? []).find((r) => r in ROLE_LABELS);
 
   return (

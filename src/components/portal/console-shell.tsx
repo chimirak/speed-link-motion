@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu, X, LogOut, ExternalLink, ShieldCheck } from "lucide-react";
+import { Menu, X, LogOut, ExternalLink, ShieldCheck, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { WHATSAPP_DISPLAY } from "@/lib/brand";
 
@@ -112,6 +112,15 @@ export function ConsoleShell({
                   Owner authority
                 </span>
               </div>
+            )}
+            {tone === "owner" && (
+              <Link
+                to="/admin"
+                onClick={() => setOpen(false)}
+                className="mb-2 flex items-center gap-2 rounded-md px-2.5 py-2 font-mono text-[11px] tracking-wide text-slate-400 uppercase transition-colors hover:bg-white/5 hover:text-slate-100"
+              >
+                <ArrowLeft className="size-3.5" /> Back to operations
+              </Link>
             )}
             <ul className="space-y-0.5">
               {items.map((item) => {
