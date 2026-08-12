@@ -189,6 +189,37 @@ jobs:
       # Production verification from inside CI, which can reach the live site.
       # Results are emitted as ::warning:: so they are readable via the
       # annotations API without access to the job log storage host.
+      # Custom-domain diagnosis + attachment. Runs in CI because it has public
+      # DNS and network access. Everything is reported via ::warning:: so it is
+      # readable through the annotations API.
+      - name: Diagnose and attach custom domain
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DEPLOY_URL: ${{ steps.redeploy.outputs.url }}
+        run: |
+          set -u
+          D=speedlinkexpresslogistics.com
+          sudo apt-get install -y dnsutils >/dev/null 2>&1 || true
+
+          echo "::warning::DNS-A >> $(dig +short A $D @1.1.1.1 2>&1 | tr '\n' ' ')"
+          echo "::warning::DNS-CNAME-WWW >> $(dig +short CNAME www.$D @1.1.1.1 2>&1 | tr '\n' ' ') A: $(dig +short A www.$D @1.1.1.1 2>&1 | tr '\n' ' ')"
+          echo "::warning::DNS-NS >> $(dig +short NS $D @1.1.1.1 2>&1 | tr '\n' ' ')"
+
+          echo "::warning::VERCEL-DOMAINS >> $(vercel domains ls --token "$VERCEL_TOKEN" 2>&1 | tr '\n' ' ' | cut -c1-350)"
+
+          # Attach apex + www to THIS project (no-op if already attached).
+          vercel domains add "$D" --token "$VERCEL_TOKEN" 2>&1 | tail -2 | tr '\n' ' ' | sed 's/^/::warning::ADD-APEX >> /'
+          vercel domains add "www.$D" --token "$VERCEL_TOKEN" 2>&1 | tail -2 | tr '\n' ' ' | sed 's/^/::warning::ADD-WWW >> /'
+
+          if [ -n "${DEPLOY_URL:-}" ]; then
+            vercel alias set "$DEPLOY_URL" "$D" --token "$VERCEL_TOKEN" 2>&1 | tail -1 | sed 's/^/::warning::ALIAS-APEX >> /'
+            vercel alias set "$DEPLOY_URL" "www.$D" --token "$VERCEL_TOKEN" 2>&1 | tail -1 | sed 's/^/::warning::ALIAS-WWW >> /'
+          fi
+
+          echo "::warning::INSPECT-DOMAIN >> $(vercel domains inspect "$D" --token "$VERCEL_TOKEN" 2>&1 | tr '\n' ' ' | cut -c1-400)"
+          echo "::warning::HTTP >> apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://$D/ || echo ERR) www=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://www.$D/ || echo ERR) http=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 http://$D/ || echo ERR)"
+          echo "::warning::TLS >> $(curl -sv --max-time 20 https://$D/ 2>&1 | grep -iE 'SSL certificate|subject:|issuer:|error' | tr '\n' ' ' | cut -c1-250)"
+
       - name: Verify live production site
         run: |
           set -u
