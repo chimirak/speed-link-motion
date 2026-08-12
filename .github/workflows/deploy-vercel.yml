@@ -214,21 +214,25 @@ jobs:
           sed -i 's/^          //' /tmp/pd.py
           head -3 /tmp/pd.py
 
-      - name: Restore vercel.app as canonical
+      - name: Verify custom domain (read-only)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set -u
           D=speedlinkexpresslogistics.com
+          which dig >/dev/null 2>&1 || sudo apt-get install -y bind9-dnsutils >/dev/null 2>&1 || true
           W(){ echo "::warning::$1 >> $(echo "$2" | tr '\n' ' ' | cut -c1-300)"; }
-          curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams" -o /tmp/teams.json
-          TEAM=$(python3 -c "import json;t=json.load(open('/tmp/teams.json')).get('teams',[]);print(t[0]['id'] if t else '')")
-          AUTH="Authorization: Bearer $VERCEL_TOKEN"
-          # The unresolvable apex must not sit in front of the working URL.
-          # The redirect is on the vercel.app host itself, pointing at an apex
-          # that does not resolve - that is what turned 200s into 307s.
-          W "CLEAR-VERCELAPP" "$(curl -s -X PATCH -H "$AUTH" -H 'Content-Type: application/json' -d '{"redirect":null,"redirectStatusCode":null}' "https://api.vercel.com/v9/projects/speed-link-motion/domains/speed-link-motion.vercel.app?teamId=$TEAM" | cut -c1-200)"
-          W "PROJECT-DOMAINS" "$(curl -s -H "$AUTH" "https://api.vercel.com/v9/projects/speed-link-motion/domains?teamId=$TEAM" -o /tmp/pdom.json && python3 /tmp/pd.py proj 2>&1)"
+
+          W "CONTROL" "$(dig +short NS google.com @8.8.8.8 2>&1 | head -1)"
+          W "SOA-ns1" "$(dig +noall +comments SOA $D @ns1.vercel-dns.com 2>&1 | grep -i status: | head -1)"
+          W "SOA-ns2" "$(dig +noall +comments SOA $D @ns2.vercel-dns.com 2>&1 | grep -i status: | head -1)"
+          W "AUTH-A" "$(dig +short A $D @ns1.vercel-dns.com 2>&1 | head -3)"
+          W "AUTH-WWW" "$(dig +short www.$D @ns1.vercel-dns.com 2>&1 | head -3)"
+          W "PUB-A" "8888=$(dig +short A $D @8.8.8.8 2>&1|head -2) 1111=$(dig +short A $D @1.1.1.1 2>&1|head -2) 9999=$(dig +short A $D @9.9.9.9 2>&1|head -2)"
+          W "PUB-WWW" "8888=$(dig +short www.$D @8.8.8.8 2>&1|head -2)"
+          W "HTTPS" "apex=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://$D/ || echo ERR) www=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://www.$D/ || echo ERR)"
+          W "TLS" "$(curl -sv --max-time 20 https://$D/ 2>&1 | grep -iE 'subject:|issuer:|SSL cert|error' | head -3)"
+          W "ROUTES-APEX" "$(for p in / /auth /book /tracking /blog /claim-ownership /admin; do printf "%s=%s " "$p" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://$D$p || echo ERR)"; done)"
 
       - name: Verify live production site
         run: |
