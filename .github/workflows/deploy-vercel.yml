@@ -225,7 +225,9 @@ jobs:
           TEAM=$(python3 -c "import json;t=json.load(open('/tmp/teams.json')).get('teams',[]);print(t[0]['id'] if t else '')")
           AUTH="Authorization: Bearer $VERCEL_TOKEN"
           # The unresolvable apex must not sit in front of the working URL.
-          W "CLEAR-REDIRECT" "$(curl -s -X PATCH -H "$AUTH" -H 'Content-Type: application/json' -d '{"redirect":null,"redirectStatusCode":null}' "https://api.vercel.com/v9/projects/speed-link-motion/domains/www.$D?teamId=$TEAM" | cut -c1-160)"
+          # The redirect is on the vercel.app host itself, pointing at an apex
+          # that does not resolve - that is what turned 200s into 307s.
+          W "CLEAR-VERCELAPP" "$(curl -s -X PATCH -H "$AUTH" -H 'Content-Type: application/json' -d '{"redirect":null,"redirectStatusCode":null}' "https://api.vercel.com/v9/projects/speed-link-motion/domains/speed-link-motion.vercel.app?teamId=$TEAM" | cut -c1-200)"
           W "PROJECT-DOMAINS" "$(curl -s -H "$AUTH" "https://api.vercel.com/v9/projects/speed-link-motion/domains?teamId=$TEAM" -o /tmp/pdom.json && python3 /tmp/pd.py proj 2>&1)"
 
       - name: Verify live production site
