@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { authCallbackUrl, siteUrl } from "@/lib/site-url";
+import { authCallbackUrl } from "@/lib/site-url";
 import { z } from "zod";
 import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/auth")({
@@ -118,18 +117,26 @@ function AuthPage() {
     }
   }
 
+  /**
+   * Native Supabase OAuth. This previously went through Lovable's auth service,
+   * which no longer exists for this deployment, so the button always failed.
+   * Supabase redirects the browser itself, so there is nothing to navigate to
+   * on success - the callback route completes the session.
+   */
   async function onGoogle() {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: siteUrl("/auth/callback"),
-    });
-    if (result.error) {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: authCallbackUrl(next) },
+      });
+      if (error) throw error;
+    } catch (error) {
       setBusy(false);
-      toast.error("Google sign-in is unavailable right now.");
-      return;
+      toast.error(
+        error instanceof Error ? error.message : "Google sign-in is unavailable right now.",
+      );
     }
-    if (result.redirected) return;
-    void navigate({ to: next, replace: true });
   }
 
   return (
