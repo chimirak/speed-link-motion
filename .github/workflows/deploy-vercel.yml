@@ -192,6 +192,28 @@ jobs:
       # Custom-domain diagnosis + attachment. Runs in CI because it has public
       # DNS and network access. Everything is reported via ::warning:: so it is
       # readable through the annotations API.
+      - name: Write diagnostic helper
+        run: |
+          cat > /tmp/pd.py <<'PYEOF'
+          import json, sys
+          mode = sys.argv[1]
+          if mode == "dom":
+              d = json.load(open("/tmp/dom.json")).get("domain", {}) or {}
+              print("intended=", d.get("intendedNameservers"),
+                    "actual=", d.get("nameservers"),
+                    "verified=", d.get("verified"),
+                    "serviceType=", d.get("serviceType"))
+          else:
+              d = json.load(open("/tmp/pdom.json"))
+              if d.get("error"):
+                  print("error=", d["error"])
+              for x in d.get("domains", []):
+                  print(x.get("name"), "verified=", x.get("verified"),
+                        "redirect=", x.get("redirect"))
+          PYEOF
+          sed -i 's/^          //' /tmp/pd.py
+          head -3 /tmp/pd.py
+
       - name: Domain diagnostics
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -199,32 +221,21 @@ jobs:
           set -u
           D=speedlinkexpresslogistics.com
           which dig >/dev/null 2>&1 || sudo apt-get install -y bind9-dnsutils >/dev/null 2>&1 || true
-          W(){ echo "::warning::$1 >> $(echo "$2" | tr '\n' ' ' | cut -c1-330)"; }
+          W(){ echo "::warning::$1 >> $(echo "$2" | tr '\n' ' ' | cut -c1-320)"; }
 
-          TEAM=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams" \
-                 | python3 -c "import sys,json;t=json.load(sys.stdin).get('teams',[]);print(t[0]['id'] if t else '')" 2>/dev/null)
+          curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams" -o /tmp/teams.json
+          TEAM=$(python3 -c "import json;t=json.load(open('/tmp/teams.json')).get('teams',[]);print(t[0]['id'] if t else '')")
           W "TEAM-ID" "$TEAM"
 
-          # THE decisive field: intendedNameservers vs actual nameservers
-          DOM=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v5/domains/$D?teamId=$TEAM")
-          echo "$DOM" > /tmp/dom.json
-          W "INTENDED-NS" "$(python3 -c "
-import json;d=json.load(open('/tmp/dom.json')).get('domain',{})
-print('intended=',d.get('intendedNameservers'),'actual=',d.get('nameservers'),'verified=',d.get('verified'),'serviceType=',d.get('serviceType'))" 2>&1)"
+          curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v5/domains/$D?teamId=$TEAM" -o /tmp/dom.json
+          W "DOMAIN-API" "$(python3 /tmp/pd.py dom 2>&1)"
 
-          # Project-level domain attachment + verification state
-          PD=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/speed-link-motion/domains?teamId=$TEAM")
-          echo "$PD" > /tmp/pd.json
-          W "PROJECT-DOMAINS" "$(python3 -c "
-import json
-for x in json.load(open('/tmp/pd.json')).get('domains',[]):
-    print(x.get('name'),'verified=',x.get('verified'),'redirect=',x.get('redirect'))" 2>&1)"
-          W "PROJECT-DOMAIN-ERR" "$(python3 -c "
-import json;d=json.load(open('/tmp/pd.json'));print(d.get('error','none'))" 2>&1)"
+          curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/speed-link-motion/domains?teamId=$TEAM" -o /tmp/pdom.json
+          W "PROJECT-DOMAINS" "$(python3 /tmp/pd.py proj 2>&1)"
 
           W "CONTROL" "$(dig +short NS google.com @8.8.8.8 2>&1 | head -2)"
-          W "NS-public" "8888=$(dig +short NS $D @8.8.8.8 2>&1|head -2) 1111=$(dig +short NS $D @1.1.1.1 2>&1|head -2) 9999=$(dig +short NS $D @9.9.9.9 2>&1|head -2)"
-          W "HTTP" "apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 15 https://$D/ || echo ERR) www=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 15 https://www.$D/ || echo ERR)"
+          W "NS-public" "8888=$(dig +short NS $D @8.8.8.8 2>&1|head -2) 1111=$(dig +short NS $D @1.1.1.1 2>&1|head -2)"
+          W "HTTP" "apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 15 https://$D/ || echo ERR)"
 
       - name: Verify live production site
         run: |
