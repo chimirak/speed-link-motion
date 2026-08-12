@@ -192,33 +192,42 @@ jobs:
       # Custom-domain diagnosis + attachment. Runs in CI because it has public
       # DNS and network access. Everything is reported via ::warning:: so it is
       # readable through the annotations API.
-      - name: Diagnose and attach custom domain
+      - name: Domain diagnostics
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          DEPLOY_URL: ${{ steps.redeploy.outputs.url }}
         run: |
           set -u
           D=speedlinkexpresslogistics.com
-          sudo apt-get install -y dnsutils >/dev/null 2>&1 || true
+          which dig >/dev/null 2>&1 || sudo apt-get install -y bind9-dnsutils >/dev/null 2>&1 || sudo apt-get install -y dnsutils >/dev/null 2>&1
+          W(){ echo "::warning::$1 >> $(echo "$2" | tr '\n' ' ' | cut -c1-330)"; }
 
-          echo "::warning::DNS-A >> $(dig +short A $D @1.1.1.1 2>&1 | tr '\n' ' ')"
-          echo "::warning::DNS-CNAME-WWW >> $(dig +short CNAME www.$D @1.1.1.1 2>&1 | tr '\n' ' ') A: $(dig +short A www.$D @1.1.1.1 2>&1 | tr '\n' ' ')"
-          echo "::warning::DNS-NS >> $(dig +short NS $D @1.1.1.1 2>&1 | tr '\n' ' ')"
+          # CONTROL: proves dig works before trusting any empty result
+          W "CONTROL-dig-google-NS" "$(dig +short NS google.com @1.1.1.1 2>&1 | head -2)"
 
-          echo "::warning::VERCEL-DOMAINS >> $(vercel domains ls --token "$VERCEL_TOKEN" 2>&1 | tr '\n' ' ' | cut -c1-350)"
+          W "NS-1111" "$(dig +short NS $D @1.1.1.1 2>&1 | head -4)"
+          W "NS-8888" "$(dig +short NS $D @8.8.8.8 2>&1 | head -4)"
+          W "NS-9999" "$(dig +short NS $D @9.9.9.9 2>&1 | head -4)"
+          W "A-apex" "$(dig +short A $D @1.1.1.1 2>&1 | head -3)"
+          W "WWW" "CNAME=$(dig +short CNAME www.$D @1.1.1.1 2>&1|head -2) A=$(dig +short A www.$D @1.1.1.1 2>&1|head -2)"
 
-          # Attach apex + www to THIS project (no-op if already attached).
-          vercel domains add "$D" --token "$VERCEL_TOKEN" 2>&1 | tail -2 | tr '\n' ' ' | sed 's/^/::warning::ADD-APEX >> /'
-          vercel domains add "www.$D" --token "$VERCEL_TOKEN" 2>&1 | tail -2 | tr '\n' ' ' | sed 's/^/::warning::ADD-WWW >> /'
+          # Authoritative: is Vercel actually serving the zone?
+          W "AUTH-ns1-apex" "$(dig +noall +answer +comments A $D @ns1.vercel-dns.com 2>&1 | grep -iE 'status:|IN' | head -3)"
+          W "AUTH-ns1-www" "$(dig +noall +answer +comments A www.$D @ns1.vercel-dns.com 2>&1 | grep -iE 'status:|IN' | head -3)"
 
-          if [ -n "${DEPLOY_URL:-}" ]; then
-            vercel alias set "$DEPLOY_URL" "$D" --token "$VERCEL_TOKEN" 2>&1 | tail -1 | sed 's/^/::warning::ALIAS-APEX >> /'
-            vercel alias set "$DEPLOY_URL" "www.$D" --token "$VERCEL_TOKEN" 2>&1 | tail -1 | sed 's/^/::warning::ALIAS-WWW >> /'
-          fi
+          W "VC-WHOAMI" "$(vercel whoami --token "$VERCEL_TOKEN" 2>&1 | tail -1)"
+          W "VC-DNS-LS" "$(vercel dns ls $D --token "$VERCEL_TOKEN" 2>&1 | tail -12)"
+          W "VC-INSPECT-APEX" "$(vercel domains inspect $D --token "$VERCEL_TOKEN" 2>&1 | grep -viE 'telemetry|roadmap|opt-out|visiting' | tail -14)"
 
-          echo "::warning::INSPECT-DOMAIN >> $(vercel domains inspect "$D" --token "$VERCEL_TOKEN" 2>&1 | tr '\n' ' ' | cut -c1-400)"
-          echo "::warning::HTTP >> apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://$D/ || echo ERR) www=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://www.$D/ || echo ERR) http=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 http://$D/ || echo ERR)"
-          echo "::warning::TLS >> $(curl -sv --max-time 20 https://$D/ 2>&1 | grep -iE 'SSL certificate|subject:|issuer:|error' | tr '\n' ' ' | cut -c1-250)"
+          # Attach BOTH hosts to the project (team-level add leaves the zone empty)
+          W "ATTACH-APEX" "$(vercel domains add $D speed-link-motion --token "$VERCEL_TOKEN" 2>&1 | tail -3)"
+          W "ATTACH-WWW" "$(vercel domains add www.$D speed-link-motion --token "$VERCEL_TOKEN" 2>&1 | tail -3)"
+
+          sleep 20
+          W "POST-DNS-LS" "$(vercel dns ls $D --token "$VERCEL_TOKEN" 2>&1 | tail -12)"
+          W "POST-AUTH-apex" "$(dig +short A $D @ns1.vercel-dns.com 2>&1 | head -3)"
+          W "POST-AUTH-www" "$(dig +short A www.$D @ns1.vercel-dns.com 2>&1 | head -3)"
+          W "CERTS" "$(vercel certs ls --token "$VERCEL_TOKEN" 2>&1 | tail -6)"
+          W "HTTP" "apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://$D/ || echo ERR) www=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://www.$D/ || echo ERR)"
 
       - name: Verify live production site
         run: |
