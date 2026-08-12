@@ -198,36 +198,33 @@ jobs:
         run: |
           set -u
           D=speedlinkexpresslogistics.com
-          which dig >/dev/null 2>&1 || sudo apt-get install -y bind9-dnsutils >/dev/null 2>&1 || sudo apt-get install -y dnsutils >/dev/null 2>&1
+          which dig >/dev/null 2>&1 || sudo apt-get install -y bind9-dnsutils >/dev/null 2>&1 || true
           W(){ echo "::warning::$1 >> $(echo "$2" | tr '\n' ' ' | cut -c1-330)"; }
 
-          # CONTROL: proves dig works before trusting any empty result
-          W "CONTROL-dig-google-NS" "$(dig +short NS google.com @1.1.1.1 2>&1 | head -2)"
+          TEAM=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams" \
+                 | python3 -c "import sys,json;t=json.load(sys.stdin).get('teams',[]);print(t[0]['id'] if t else '')" 2>/dev/null)
+          W "TEAM-ID" "$TEAM"
 
-          W "NS-1111" "$(dig +short NS $D @1.1.1.1 2>&1 | head -4)"
-          W "NS-8888" "$(dig +short NS $D @8.8.8.8 2>&1 | head -4)"
-          W "NS-9999" "$(dig +short NS $D @9.9.9.9 2>&1 | head -4)"
-          W "A-apex" "$(dig +short A $D @1.1.1.1 2>&1 | head -3)"
-          W "WWW" "CNAME=$(dig +short CNAME www.$D @1.1.1.1 2>&1|head -2) A=$(dig +short A www.$D @1.1.1.1 2>&1|head -2)"
+          # THE decisive field: intendedNameservers vs actual nameservers
+          DOM=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v5/domains/$D?teamId=$TEAM")
+          echo "$DOM" > /tmp/dom.json
+          W "INTENDED-NS" "$(python3 -c "
+import json;d=json.load(open('/tmp/dom.json')).get('domain',{})
+print('intended=',d.get('intendedNameservers'),'actual=',d.get('nameservers'),'verified=',d.get('verified'),'serviceType=',d.get('serviceType'))" 2>&1)"
 
-          # Authoritative: is Vercel actually serving the zone?
-          W "AUTH-ns1-apex" "$(dig +noall +answer +comments A $D @ns1.vercel-dns.com 2>&1 | grep -iE 'status:|IN' | head -3)"
-          W "AUTH-ns1-www" "$(dig +noall +answer +comments A www.$D @ns1.vercel-dns.com 2>&1 | grep -iE 'status:|IN' | head -3)"
+          # Project-level domain attachment + verification state
+          PD=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/speed-link-motion/domains?teamId=$TEAM")
+          echo "$PD" > /tmp/pd.json
+          W "PROJECT-DOMAINS" "$(python3 -c "
+import json
+for x in json.load(open('/tmp/pd.json')).get('domains',[]):
+    print(x.get('name'),'verified=',x.get('verified'),'redirect=',x.get('redirect'))" 2>&1)"
+          W "PROJECT-DOMAIN-ERR" "$(python3 -c "
+import json;d=json.load(open('/tmp/pd.json'));print(d.get('error','none'))" 2>&1)"
 
-          W "VC-WHOAMI" "$(vercel whoami --token "$VERCEL_TOKEN" 2>&1 | tail -1)"
-          W "VC-DNS-LS" "$(vercel dns ls $D --token "$VERCEL_TOKEN" 2>&1 | tail -12)"
-          W "VC-INSPECT-APEX" "$(vercel domains inspect $D --token "$VERCEL_TOKEN" 2>&1 | grep -viE 'telemetry|roadmap|opt-out|visiting' | tail -14)"
-
-          # Attach BOTH hosts to the project (team-level add leaves the zone empty)
-          W "ATTACH-APEX" "$(vercel domains add $D speed-link-motion --token "$VERCEL_TOKEN" 2>&1 | tail -3)"
-          W "ATTACH-WWW" "$(vercel domains add www.$D speed-link-motion --token "$VERCEL_TOKEN" 2>&1 | tail -3)"
-
-          sleep 20
-          W "POST-DNS-LS" "$(vercel dns ls $D --token "$VERCEL_TOKEN" 2>&1 | tail -12)"
-          W "POST-AUTH-apex" "$(dig +short A $D @ns1.vercel-dns.com 2>&1 | head -3)"
-          W "POST-AUTH-www" "$(dig +short A www.$D @ns1.vercel-dns.com 2>&1 | head -3)"
-          W "CERTS" "$(vercel certs ls --token "$VERCEL_TOKEN" 2>&1 | tail -6)"
-          W "HTTP" "apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://$D/ || echo ERR) www=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://www.$D/ || echo ERR)"
+          W "CONTROL" "$(dig +short NS google.com @8.8.8.8 2>&1 | head -2)"
+          W "NS-public" "8888=$(dig +short NS $D @8.8.8.8 2>&1|head -2) 1111=$(dig +short NS $D @1.1.1.1 2>&1|head -2) 9999=$(dig +short NS $D @9.9.9.9 2>&1|head -2)"
+          W "HTTP" "apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 15 https://$D/ || echo ERR) www=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 15 https://www.$D/ || echo ERR)"
 
       - name: Verify live production site
         run: |
