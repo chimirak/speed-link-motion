@@ -223,19 +223,34 @@ jobs:
           which dig >/dev/null 2>&1 || sudo apt-get install -y bind9-dnsutils >/dev/null 2>&1 || true
           W(){ echo "::warning::$1 >> $(echo "$2" | tr '\n' ' ' | cut -c1-320)"; }
 
+          W "CONTROL" "$(dig +short NS google.com @8.8.8.8 2>&1 | head -2)"
+
+          # --- AUTHORITATIVE: is the Vercel zone live? ---
+          W "AUTH-SOA" "$(dig +noall +comments +answer SOA $D @ns1.vercel-dns.com 2>&1 | grep -iE 'status:|SOA' | head -3)"
+          W "AUTH-NS" "$(dig +short NS $D @ns1.vercel-dns.com 2>&1 | head -3)"
+          W "AUTH-A-apex" "$(dig +noall +comments +answer A $D @ns1.vercel-dns.com 2>&1 | grep -iE 'status:|IN' | head -4)"
+          W "AUTH-www" "$(dig +noall +comments +answer A www.$D @ns1.vercel-dns.com 2>&1 | grep -iE 'status:|IN' | head -4)"
+          W "AUTH-ns2" "$(dig +noall +comments +answer A $D @ns2.vercel-dns.com 2>&1 | grep -iE 'status:|IN' | head -3)"
+
+          # --- PUBLIC RESOLVERS ---
+          W "PUB-NS" "8888=$(dig +short NS $D @8.8.8.8 2>&1|head -2) 1111=$(dig +short NS $D @1.1.1.1 2>&1|head -2) 9999=$(dig +short NS $D @9.9.9.9 2>&1|head -2) 208=$(dig +short NS $D @208.67.222.222 2>&1|head -2)"
+          W "PUB-A" "8888=$(dig +short A $D @8.8.8.8 2>&1|head -2) 1111=$(dig +short A $D @1.1.1.1 2>&1|head -2) 9999=$(dig +short A $D @9.9.9.9 2>&1|head -2)"
+          W "PUB-WWW" "8888=$(dig +short www.$D @8.8.8.8 2>&1|head -2) 1111=$(dig +short www.$D @1.1.1.1 2>&1|head -2)"
+          W "TRACE" "$(dig +trace +nodnssec NS $D 2>&1 | grep -iE 'vercel-dns|NS' | tail -4)"
+
+          # --- VERCEL STATE (read-only) ---
           curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams" -o /tmp/teams.json
           TEAM=$(python3 -c "import json;t=json.load(open('/tmp/teams.json')).get('teams',[]);print(t[0]['id'] if t else '')")
-          W "TEAM-ID" "$TEAM"
-
           curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v5/domains/$D?teamId=$TEAM" -o /tmp/dom.json
           W "DOMAIN-API" "$(python3 /tmp/pd.py dom 2>&1)"
-
           curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/speed-link-motion/domains?teamId=$TEAM" -o /tmp/pdom.json
           W "PROJECT-DOMAINS" "$(python3 /tmp/pd.py proj 2>&1)"
+          W "VC-DNS-RECORDS" "$(vercel dns ls $D --token "$VERCEL_TOKEN" 2>&1 | tail -8)"
+          W "CERTS" "$(vercel certs ls --token "$VERCEL_TOKEN" 2>&1 | grep -i "$D" | head -3)"
 
-          W "CONTROL" "$(dig +short NS google.com @8.8.8.8 2>&1 | head -2)"
-          W "NS-public" "8888=$(dig +short NS $D @8.8.8.8 2>&1|head -2) 1111=$(dig +short NS $D @1.1.1.1 2>&1|head -2)"
-          W "HTTP" "apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 15 https://$D/ || echo ERR)"
+          # --- LIVE HTTP ---
+          W "HTTP" "apex=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://$D/ || echo ERR) www=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 https://www.$D/ || echo ERR)"
+          W "REDIRECT" "$(curl -sk -o /dev/null -w 'code=%{http_code} to=%{redirect_url}' --max-time 20 https://www.$D/ 2>&1)"
 
       - name: Verify live production site
         run: |
