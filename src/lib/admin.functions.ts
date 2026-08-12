@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
@@ -740,4 +741,125 @@ export const verifyAdminSession = createServerFn({ method: "GET" })
     });
     if (error) throw new Error(error.message);
     return { valid: data === true };
+  });
+
+/* ---------------------------------- PRICING ---------------------------------
+ * Rates live in pricing_rules and quotes are computed by the quote_shipment
+ * RPC, so no price is ever hardcoded in a component. Every mutation is audited
+ * with before/after values by the pricing audit trigger.
+ * -------------------------------------------------------------------------- */
+
+export type PricingRule = {
+  id: string;
+  code: string;
+  label: string;
+  kind: string;
+  service_type: string | null;
+  destination_scope: string;
+  base_amount: number;
+  per_kg_amount: number;
+  min_charge: number;
+  currency: string;
+  active: boolean;
+  sort_order: number;
+};
+
+export const getPricingRules = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PricingRule[]> => {
+    await requirePermission(context, "settings.write");
+    const { data } = await context.supabase
+      .from("pricing_rules")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    return (data ?? []) as unknown as PricingRule[];
+  });
+
+export const savePricingRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      id?: string | undefined;
+      code: string;
+      label: string;
+      kind: string;
+      service_type?: string | undefined;
+      destination_scope: string;
+      base_amount: number;
+      per_kg_amount: number;
+      min_charge: number;
+      currency: string;
+      active: boolean;
+      sort_order: number;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "settings.write");
+
+    const nonNegative = [data.base_amount, data.per_kg_amount, data.min_charge];
+    if (nonNegative.some((n) => !Number.isFinite(n) || n < 0)) {
+      throw new Error("Amounts must be zero or greater.");
+    }
+    const code = data.code
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "_")
+      .slice(0, 60);
+    if (!code) throw new Error("A rate code is required.");
+
+    const payload = {
+      code,
+      label: data.label.trim().slice(0, 120),
+      kind: data.kind,
+      service_type: data.service_type?.trim() || null,
+      destination_scope: data.destination_scope,
+      base_amount: data.base_amount,
+      per_kg_amount: data.per_kg_amount,
+      min_charge: data.min_charge,
+      currency: data.currency.trim().toUpperCase().slice(0, 3) || "GBP",
+      active: data.active,
+      sort_order: data.sort_order,
+    };
+
+    const { error } = data.id
+      ? await context.supabase.from("pricing_rules").update(payload).eq("id", data.id)
+      : await context.supabase.from("pricing_rules").insert(payload);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deletePricingRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "settings.write");
+    const { error } = await context.supabase.from("pricing_rules").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Live quote. Safe for any visitor: reads only active published rates. */
+export const quoteShipment = createServerFn({ method: "GET" })
+  .inputValidator((d: { service_type: string; weight_kg: number; international: boolean }) => ({
+    service_type: String(d.service_type ?? "express").slice(0, 40),
+    weight_kg: Math.min(Math.max(Number(d.weight_kg) || 0, 0), 100000),
+    international: Boolean(d.international),
+  }))
+  .handler(async ({ data }) => {
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    const url = process.env["SUPABASE_URL"];
+    if (!key || !url) return null;
+    const client = createClient<Database>(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: quote, error } = await client.rpc("quote_shipment", {
+      _service_type: data.service_type,
+      _weight_kg: data.weight_kg,
+      _international: data.international,
+    });
+    if (error) {
+      console.error("[pricing] quote failed:", error.message);
+      return null;
+    }
+    return quote;
   });

@@ -17,6 +17,7 @@ import {
   Settings,
   ShieldCheck,
   Landmark,
+  Tags,
   Users,
 } from "lucide-react";
 import { PortalShell, type PortalNavItem } from "@/components/portal/portal-shell";
@@ -45,6 +46,7 @@ const ADMIN_NAV: AdminNavItem[] = [
   { to: "/admin/reports", label: "Reports", icon: FileText, permission: "analytics.read" },
   { to: "/admin/staff", label: "Staff & roles", icon: ShieldCheck, permission: "staff.manage" },
   { to: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, permission: "audit.read" },
+  { to: "/admin/pricing", label: "Pricing", icon: Tags, permission: "settings.write" },
   { to: "/admin/settings", label: "Settings", icon: Settings, permission: "settings.write" },
   // Owner-only. Filtered out for every other role by the permission check below.
   {

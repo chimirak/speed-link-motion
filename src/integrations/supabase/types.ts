@@ -487,6 +487,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      pricing_rules: {
+        Row: {
+          active: boolean
+          base_amount: number
+          code: string
+          created_at: string
+          currency: string
+          destination_scope: string
+          id: string
+          kind: string
+          label: string
+          min_charge: number
+          per_kg_amount: number
+          service_type: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          base_amount?: number
+          code: string
+          created_at?: string
+          currency?: string
+          destination_scope?: string
+          id?: string
+          kind?: string
+          label: string
+          min_charge?: number
+          per_kg_amount?: number
+          service_type?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          base_amount?: number
+          code?: string
+          created_at?: string
+          currency?: string
+          destination_scope?: string
+          id?: string
+          kind?: string
+          label?: string
+          min_charge?: number
+          per_kg_amount?: number
+          service_type?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active: boolean;
@@ -823,6 +874,14 @@ export type Database = {
         Args: { _reason?: string | null; _target: string };
         Returns: undefined;
       };
+      quote_shipment: {
+        Args: {
+          _international?: boolean
+          _service_type: string
+          _weight_kg: number
+        }
+        Returns: Json
+      }
       has_permission: {
         Args: { _perm: string; _user_id: string };
         Returns: boolean;
