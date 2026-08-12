@@ -5,6 +5,8 @@ import { useState } from "react";
 import { ShieldAlert, ShieldCheck, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import {
+  getAdminRequests,
+  decideAdminRequest,
   getAdminAllowlist,
   setAdminAllowlist,
   getAdminAccounts,
@@ -36,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { formatDate } from "@/lib/logistics";
 
-export const Route = createFileRoute("/_authenticated/admin/platform")({
+export const Route = createFileRoute("/_authenticated/control")({
   component: PlatformControl,
 });
 
@@ -74,6 +76,28 @@ function PlatformControl() {
   });
 
   const currentSlots = slots ?? [...(allowlist.data ?? []), "", "", "", ""].slice(0, 4);
+
+  const fetchRequests = useServerFn(getAdminRequests);
+  const decide = useServerFn(decideAdminRequest);
+
+  const requests = useQuery({
+    queryKey: ["admin-requests"],
+    queryFn: () => fetchRequests(),
+    retry: false,
+  });
+
+  const decideMut = useMutation({
+    mutationFn: (v: { id: string; approve: boolean }) => decide({ data: v }),
+    onSuccess: () => {
+      toast.success("Decision recorded");
+      void qc.invalidateQueries({ queryKey: ["admin-requests"] });
+      void qc.invalidateQueries({ queryKey: ["admin-allowlist"] });
+      void qc.invalidateQueries({ queryKey: ["admin-accounts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const pending = (requests.data ?? []).filter((r) => r.status === "pending");
 
   const access = useQuery({
     queryKey: ["admin-access"],
@@ -195,6 +219,50 @@ function PlatformControl() {
           a compromised administrator.
         </p>
       </div>
+
+      <section className="rounded-2xl border border-border p-4">
+        <h2 className="font-display text-sm font-bold tracking-wide uppercase">Access requests</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Approving adds the address to the allowlist and grants administrator access. The applicant
+          is never told who decided.
+        </p>
+        {pending.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No pending requests.</p>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {pending.map((r) => (
+              <li
+                key={r.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{r.full_name ?? r.email}</p>
+                  <p className="truncate text-xs break-all text-muted-foreground">{r.email}</p>
+                  {r.reason && <p className="mt-1 text-xs text-muted-foreground">{r.reason}</p>}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="speed"
+                    disabled={decideMut.isPending}
+                    onClick={() => decideMut.mutate({ id: r.id, approve: true })}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={decideMut.isPending}
+                    onClick={() => decideMut.mutate({ id: r.id, approve: false })}
+                  >
+                    Decline
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="rounded-2xl border border-border p-4">
         <h2 className="font-display text-sm font-bold tracking-wide uppercase">

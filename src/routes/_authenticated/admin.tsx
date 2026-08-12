@@ -16,7 +16,6 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
-  Landmark,
   Tags,
   Users,
 } from "lucide-react";
@@ -48,13 +47,6 @@ const ADMIN_NAV: AdminNavItem[] = [
   { to: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, permission: "audit.read" },
   { to: "/admin/pricing", label: "Pricing", icon: Tags, permission: "settings.write" },
   { to: "/admin/settings", label: "Settings", icon: Settings, permission: "settings.write" },
-  // Owner-only. Filtered out for every other role by the permission check below.
-  {
-    to: "/admin/platform",
-    label: "Platform control",
-    icon: Landmark,
-    permission: "platform.manage",
-  },
 ];
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -98,7 +90,7 @@ function AdminLayout() {
 
   const pathname = useRouterState({ select: (st) => st.location.pathname });
   // Owner territory gets its own visual authority signal.
-  const isOwnerArea = pathname.startsWith("/admin/platform");
+  const isOwnerArea = false;
 
   const permissions = data?.permissions ?? [];
   const isStaff = permissions.length > 0;
@@ -134,8 +126,8 @@ function AdminLayout() {
         <div className="max-w-sm">
           <p className="font-display text-xl font-bold">Access revoked</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your administrator access has been revoked by the platform owner. Contact them if you
-            believe this is a mistake.
+            Your administrator access has been revoked. Contact your system contact if you believe
+            this is a mistake.
           </p>
         </div>
       </div>
@@ -155,22 +147,7 @@ function AdminLayout() {
     );
   }
 
-  // Owner territory is a separate surface with its own navigation, not the
-  // operations nav in a different colour.
-  const OWNER_NAV: AdminNavItem[] = [
-    {
-      to: "/admin/platform",
-      label: "Platform control",
-      icon: Landmark,
-      permission: "platform.manage",
-    },
-    { to: "/admin/staff", label: "Administrators", icon: ShieldCheck, permission: "staff.manage" },
-    { to: "/admin/audit-logs", label: "Security log", icon: ScrollText, permission: "audit.read" },
-    { to: "/admin/settings", label: "System config", icon: Settings, permission: "settings.write" },
-  ];
-
-  const source = isOwnerArea ? OWNER_NAV : ADMIN_NAV;
-  const items = source.filter((item) => permissions.includes(item.permission));
+  const items = ADMIN_NAV.filter((item) => permissions.includes(item.permission));
   const topRole = (data?.roles ?? []).find((r) => r in ROLE_LABELS);
 
   return (

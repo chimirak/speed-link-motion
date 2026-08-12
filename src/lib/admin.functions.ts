@@ -896,3 +896,79 @@ export const setAdminAllowlist = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, emails };
   });
+
+/* --------------------- ADMIN ACCESS REQUESTS (owner-only) ------------------ */
+
+export type AdminRequest = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  reason: string | null;
+  status: string;
+  created_at: string;
+};
+
+/** Any signed-in user may apply. The owner alone ever sees the queue. */
+export const requestAdminAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { reason?: string | undefined }) => d)
+  .handler(async ({ data, context }) => {
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const { error } = await context.supabase.from("admin_access_requests").insert({
+      user_id: context.userId,
+      email: profile?.email ?? "",
+      full_name: profile?.full_name ?? null,
+      reason: data.reason?.slice(0, 500) ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getAdminRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminRequest[]> => {
+    await requirePermission(context, "platform.manage");
+    const { data } = await context.supabase
+      .from("admin_access_requests")
+      .select("id,email,full_name,reason,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    return (data ?? []) as AdminRequest[];
+  });
+
+export const decideAdminRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; approve: boolean }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "platform.manage");
+    const { error } = await context.supabase.rpc("decide_admin_request", {
+      _id: data.id,
+      _approve: data.approve,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/**
+ * Customer directory for administrators: name and email only.
+ * Phone, company and address stay invisible to staff; the owner alone sees
+ * full profiles through the profiles table.
+ */
+export const getCustomerDirectory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requirePermission(context, "customers.read");
+    const { data, error } = await context.supabase.rpc("admin_customer_directory");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Array<{
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      created_at: string;
+    }>;
+  });

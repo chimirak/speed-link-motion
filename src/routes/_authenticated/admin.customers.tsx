@@ -2,113 +2,116 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { getAdminCustomers } from "@/lib/admin.functions";
-import { Panel } from "@/components/portal/portal-shell";
+import { Mail } from "lucide-react";
+import { getCustomerDirectory } from "@/lib/admin.functions";
 import {
   AdminEmpty,
   AdminError,
-  Chip,
   DataTable,
   SearchInput,
+  TableSkeleton,
   Toolbar,
   type Column,
 } from "@/components/portal/admin-ui";
+import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/logistics";
+import { BUSINESS_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({
+  head: () => ({ meta: [{ name: "robots", content: "noindex" }] }),
   component: AdminCustomers,
 });
 
-type Profile = Awaited<ReturnType<typeof getAdminCustomers>>["profiles"][number];
+type Customer = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  created_at: string;
+};
 
+/**
+ * Customer directory.
+ *
+ * Reads the admin_customer_directory RPC, which returns name and email only.
+ * Phone, company and address are never exposed to staff, and other staff
+ * accounts are excluded entirely.
+ */
 function AdminCustomers() {
-  const fetchCustomers = useServerFn(getAdminCustomers);
-  const [query, setQuery] = useState("");
+  const fetchDirectory = useServerFn(getCustomerDirectory);
+  const [q, setQ] = useState("");
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["admin-customers"],
-    queryFn: () => fetchCustomers(),
+  const query = useQuery({
+    queryKey: ["customer-directory"],
+    queryFn: () => fetchDirectory(),
     retry: false,
   });
 
-  const roleMap = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const r of data?.roles ?? []) {
-      map.set(r.user_id, [...(map.get(r.user_id) ?? []), r.role as string]);
-    }
-    return map;
-  }, [data]);
-
   const rows = useMemo(() => {
-    const all = data?.profiles ?? [];
-    const q = query.trim().toLowerCase();
-    if (!q) return all;
-    return all.filter((p) =>
-      [p.full_name, p.email, p.company, p.phone].some((v) =>
-        String(v ?? "")
-          .toLowerCase()
-          .includes(q),
-      ),
+    const list = (query.data ?? []) as Customer[];
+    const needle = q.trim().toLowerCase();
+    if (!needle) return list;
+    return list.filter(
+      (c) =>
+        (c.full_name ?? "").toLowerCase().includes(needle) ||
+        (c.email ?? "").toLowerCase().includes(needle),
     );
-  }, [data, query]);
+  }, [query.data, q]);
 
-  const columns: Column<Profile>[] = [
+  const columns: Column<Customer>[] = [
     {
-      header: "Name",
+      header: "Customer",
       primary: true,
-      cell: (p) => <span className="font-medium">{p.full_name ?? "Unnamed"}</span>,
-    },
-    {
-      header: "Email",
-      cell: (p) => <span className="break-all text-muted-foreground">{p.email ?? "—"}</span>,
-    },
-    { header: "Phone", cell: (p) => p.phone ?? "—" },
-    { header: "Company", cell: (p) => p.company ?? "—", hideOnMobile: true },
-    {
-      header: "Roles",
-      cell: (p) => {
-        const roles = roleMap.get(p.id) ?? ["customer"];
-        return (
-          <span className="flex flex-wrap gap-1">
-            {roles.map((r) => (
-              <Chip
-                key={r}
-                label={r.replace("_", " ")}
-                tone={r === "customer" ? "neutral" : "info"}
-              />
-            ))}
-          </span>
-        );
-      },
-    },
-    {
-      header: "Status",
-      cell: (p) => (
-        <Chip label={p.active ? "Active" : "Disabled"} tone={p.active ? "positive" : "danger"} />
+      cell: (c) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{c.full_name ?? "Unnamed"}</p>
+          <p className="truncate text-xs break-all text-muted-foreground">{c.email}</p>
+        </div>
       ),
     },
-    { header: "Joined", cell: (p) => formatDate(p.created_at), hideOnMobile: true },
+    { header: "Registered", hideOnMobile: true, cell: (c) => formatDate(c.created_at) },
+    {
+      header: "",
+      cell: (c) =>
+        c.email ? (
+          <Button asChild size="sm" variant="outline">
+            <a
+              href={`mailto:${c.email}?subject=${encodeURIComponent(
+                `${BUSINESS_NAME} — your shipment`,
+              )}&body=${encodeURIComponent(`Hello ${c.full_name ?? ""},\n\n`)}`}
+            >
+              <Mail className="size-3.5" /> Email
+            </a>
+          </Button>
+        ) : null,
+    },
   ];
 
-  if (error) return <AdminError error={error} onRetry={() => void refetch()} />;
-
   return (
-    <Panel title="Customers">
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-2xl font-extrabold">Customers</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Name and email only. Contact a customer directly using the email action.
+        </p>
+      </div>
+
       <Toolbar>
-        <SearchInput
-          value={query}
-          onChange={setQuery}
-          placeholder="Search name, email or company"
-        />
-        {!isLoading && <span className="text-xs text-muted-foreground">{rows.length} shown</span>}
+        <SearchInput value={q} onChange={setQ} placeholder="Search name or email" />
+        <span className="text-sm text-muted-foreground">{rows.length} customers</span>
       </Toolbar>
-      <DataTable
-        rows={rows}
-        columns={columns}
-        getKey={(p) => p.id}
-        loading={isLoading}
-        empty={<AdminEmpty title="No customers yet" body="Registered accounts will appear here." />}
-      />
-    </Panel>
+
+      {query.isLoading && <TableSkeleton />}
+      {query.error && <AdminError error={query.error} onRetry={() => void query.refetch()} />}
+      {query.data && (
+        <DataTable
+          rows={rows}
+          columns={columns}
+          getKey={(c) => c.id}
+          empty={
+            <AdminEmpty title="No customers yet" body="Registered customers will appear here." />
+          }
+        />
+      )}
+    </div>
   );
 }

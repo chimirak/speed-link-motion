@@ -59,6 +59,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      admin_access_requests: {
+        Row: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          email: string;
+          full_name: string | null;
+          id: string;
+          reason: string | null;
+          status: string;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          email: string;
+          full_name?: string | null;
+          id?: string;
+          reason?: string | null;
+          status?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          email?: string;
+          full_name?: string | null;
+          id?: string;
+          reason?: string | null;
+          status?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       admin_security: {
         Row: {
           access_revoked_at: string | null;
@@ -885,6 +921,16 @@ export type Database = {
       set_admin_allowlist: { Args: { _emails: string[] }; Returns: Json };
       admin_allowlist: { Args: Record<string, never>; Returns: string[] };
       is_non_customer: { Args: { _user_id: string }; Returns: boolean };
+      decide_admin_request: { Args: { _approve: boolean; _id: string }; Returns: string };
+      admin_customer_directory: {
+        Args: Record<string, never>;
+        Returns: {
+          created_at: string;
+          email: string;
+          full_name: string;
+          id: string;
+        }[];
+      };
       has_permission: {
         Args: { _perm: string; _user_id: string };
         Returns: boolean;
