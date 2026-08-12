@@ -102,7 +102,7 @@ export function ConsoleShell({
         <aside
           className={`${
             open ? "block" : "hidden"
-          } border-b border-white/10 bg-[#0b0e14] lg:sticky lg:top-12 lg:block lg:h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:border-r lg:border-b-0`}
+          } max-h-[70dvh] overflow-y-auto border-b border-white/10 bg-[#0b0e14] lg:sticky lg:top-12 lg:block lg:h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:border-r lg:border-b-0`}
         >
           <nav className="p-2.5">
             {tone === "owner" && (
@@ -141,7 +141,7 @@ export function ConsoleShell({
         </aside>
 
         {/* Work area */}
-        <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
+        <main className="min-w-0 overflow-x-hidden px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
           <div className="mx-auto max-w-[1400px]">
             <h1 className="sr-only">{title}</h1>
             {children}

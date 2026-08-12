@@ -117,7 +117,7 @@ function AdminPricing() {
       cell: (r) => (
         <div className="min-w-0">
           <p className="truncate font-medium">{r.label}</p>
-          <p className="numeric truncate text-xs text-muted-foreground">{r.code}</p>
+          <p className="numeric truncate text-xs break-all text-muted-foreground">{r.code}</p>
         </div>
       ),
     },
@@ -186,7 +186,7 @@ function AdminPricing() {
           <Calculator className="size-4 text-primary" aria-hidden="true" />
           <h2 className="font-display text-sm font-bold tracking-wide uppercase">Test a quote</h2>
         </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end">
           <label className="block text-sm">
             <span className="mb-1 block text-xs text-muted-foreground">Service</span>
             <select
@@ -307,7 +307,7 @@ function AdminPricing() {
                 placeholder="express"
               />
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {(["base_amount", "per_kg_amount", "min_charge"] as const).map((f) => (
                 <label key={f} className="block text-sm">
                   <span className="mb-1 block text-xs text-muted-foreground">
