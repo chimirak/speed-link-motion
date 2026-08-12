@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu, X, LogOut, ExternalLink, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Menu, X, LogOut, ShieldCheck, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { WHATSAPP_DISPLAY } from "@/lib/brand";
 
@@ -78,13 +78,6 @@ export function ConsoleShell({
           <span className="ml-auto hidden font-mono text-[11px] text-slate-600 md:inline">
             support {WHATSAPP_DISPLAY}
           </span>
-
-          <Link
-            to="/"
-            className="hidden items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[11px] text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-100 sm:flex"
-          >
-            Public site <ExternalLink className="size-3" />
-          </Link>
 
           <button
             type="button"

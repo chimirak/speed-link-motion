@@ -863,3 +863,36 @@ export const quoteShipment = createServerFn({ method: "GET" })
     }
     return quote;
   });
+
+/* ------------------------- ADMIN ALLOWLIST (owner-only) -------------------
+ * Administrator access is limited to a four-address allowlist that only the
+ * platform owner can change. Enforced in the database by assign_role(), which
+ * refuses any staff role for an address that is not on the list.
+ * -------------------------------------------------------------------------- */
+
+export const getAdminAllowlist = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<string[]> => {
+    await requirePermission(context, "platform.manage");
+    const { data } = await context.supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "admin_allowlist")
+      .maybeSingle();
+    const value = (data?.value ?? {}) as { emails?: string[] };
+    return value.emails ?? [];
+  });
+
+export const setAdminAllowlist = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { emails: string[] }) => d)
+  .handler(async ({ data, context }) => {
+    await requirePermission(context, "platform.manage");
+    const emails = data.emails
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => e.includes("@"))
+      .slice(0, 4);
+    const { error } = await context.supabase.rpc("set_admin_allowlist", { _emails: emails });
+    if (error) throw new Error(error.message);
+    return { ok: true, emails };
+  });

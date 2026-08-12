@@ -5,6 +5,8 @@ import { useState } from "react";
 import { ShieldAlert, ShieldCheck, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import {
+  getAdminAllowlist,
+  setAdminAllowlist,
   getAdminAccounts,
   getMyAccess,
   revokeAdminAccess,
@@ -18,6 +20,7 @@ import {
   DataTable,
   TableSkeleton,
   Toolbar,
+  inputClass,
   type Column,
 } from "@/components/portal/admin-ui";
 import { Button } from "@/components/ui/button";
@@ -49,6 +52,28 @@ function PlatformControl() {
   const restore = useServerFn(restoreAdminAccess);
   const qc = useQueryClient();
   const [target, setTarget] = useState<AdminAccount | null>(null);
+  const [slots, setSlots] = useState<string[] | null>(null);
+
+  const fetchAllowlist = useServerFn(getAdminAllowlist);
+  const saveAllowlist = useServerFn(setAdminAllowlist);
+
+  const allowlist = useQuery({
+    queryKey: ["admin-allowlist"],
+    queryFn: () => fetchAllowlist(),
+    enabled: true,
+    retry: false,
+  });
+
+  const allowMut = useMutation({
+    mutationFn: (emails: string[]) => saveAllowlist({ data: { emails } }),
+    onSuccess: () => {
+      toast.success("Administrator allowlist updated");
+      void qc.invalidateQueries({ queryKey: ["admin-allowlist"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const currentSlots = slots ?? [...(allowlist.data ?? []), "", "", "", ""].slice(0, 4);
 
   const access = useQuery({
     queryKey: ["admin-access"],
@@ -170,6 +195,41 @@ function PlatformControl() {
           a compromised administrator.
         </p>
       </div>
+
+      <section className="rounded-2xl border border-border p-4">
+        <h2 className="font-display text-sm font-bold tracking-wide uppercase">
+          Administrator allowlist
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Only these addresses can hold an administrator role. Maximum four. Enforced in the
+          database — a role cannot be granted to an address that is not listed here.
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {currentSlots.map((email, i) => (
+            <input
+              key={i}
+              className={inputClass}
+              value={email}
+              placeholder={`admin ${i + 1} email`}
+              inputMode="email"
+              onChange={(e) => {
+                const next = [...currentSlots];
+                next[i] = e.target.value;
+                setSlots(next);
+              }}
+            />
+          ))}
+        </div>
+        <Button
+          variant="speed"
+          size="sm"
+          className="mt-3"
+          disabled={allowMut.isPending}
+          onClick={() => allowMut.mutate(currentSlots.filter((e) => e.trim() !== ""))}
+        >
+          {allowMut.isPending ? "Saving…" : "Save allowlist"}
+        </Button>
+      </section>
 
       <Toolbar>
         <span className="text-sm text-muted-foreground">

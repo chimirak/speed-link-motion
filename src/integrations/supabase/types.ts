@@ -882,6 +882,9 @@ export type Database = {
         };
         Returns: Json;
       };
+      set_admin_allowlist: { Args: { _emails: string[] }; Returns: Json };
+      admin_allowlist: { Args: Record<string, never>; Returns: string[] };
+      is_non_customer: { Args: { _user_id: string }; Returns: boolean };
       has_permission: {
         Args: { _perm: string; _user_id: string };
         Returns: boolean;
