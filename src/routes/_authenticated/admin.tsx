@@ -90,17 +90,12 @@ function AdminLayout() {
 
   const pathname = useRouterState({ select: (st) => st.location.pathname });
   // Owner territory gets its own visual authority signal.
-  const isOwnerArea = false;
 
   const permissions = data?.permissions ?? [];
   const isStaff = permissions.length > 0;
 
-  // A signed-in customer who guesses /admin gets sent back to their own portal.
-  useEffect(() => {
-    if (!isLoading && data && !isStaff) {
-      void navigate({ to: "/dashboard", replace: true });
-    }
-  }, [isLoading, data, isStaff, navigate]);
+  // Portals never redirect into one another. A non-staff visitor is denied
+  // here, inside the console, with no route out to the customer portal.
 
   if (isLoading) {
     return (
@@ -151,12 +146,7 @@ function AdminLayout() {
   const topRole = (data?.roles ?? []).find((r) => r in ROLE_LABELS);
 
   return (
-    <ConsoleShell
-      items={items}
-      title="Operations"
-      badge={topRole ? ROLE_LABELS[topRole] : "Staff"}
-      tone={isOwnerArea ? "owner" : "ops"}
-    >
+    <ConsoleShell items={items} title="Operations" badge={topRole ? ROLE_LABELS[topRole] : "Staff"}>
       <Outlet />
     </ConsoleShell>
   );
