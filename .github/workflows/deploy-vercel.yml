@@ -234,6 +234,16 @@ jobs:
           W "TLS" "$(curl -sv --max-time 20 https://$D/ 2>&1 | grep -iE 'subject:|issuer:|SSL cert|error' | head -3)"
           W "ROUTES-APEX" "$(for p in / /auth /book /tracking /blog /claim-ownership /admin; do printf "%s=%s " "$p" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://$D$p || echo ERR)"; done)"
 
+      - name: Probe Supabase auth settings
+        env:
+          KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          set -u
+          W(){ echo "::warning::$1 >> $(echo "$2" | tr '\n' ' ' | cut -c1-320)"; }
+          curl -s --max-time 20 -H "apikey: $KEY" "$URL/auth/v1/settings" -o /tmp/s.json || true
+          W "AUTH-SETTINGS" "$(cat /tmp/s.json 2>/dev/null | head -c 600)"
+
       - name: Verify live production site
         run: |
           set -u
