@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as CareersRouteImport } from './routes/careers'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ControlLoginRouteImport } from './routes/control-login'
 import { Route as CoverageRouteImport } from './routes/coverage'
 import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as FlightBookingRouteImport } from './routes/flight-booking'
@@ -73,6 +75,11 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin-login',
+  path: '/admin-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -96,6 +103,11 @@ const CareersRoute = CareersRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ControlLoginRoute = ControlLoginRouteImport.update({
+  id: '/control-login',
+  path: '/control-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoverageRoute = CoverageRouteImport.update({
@@ -329,11 +341,13 @@ const AuthenticatedDashboardShipmentsShipmentIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
   '/book': typeof BookRoute
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/control-login': typeof ControlLoginRoute
   '/coverage': typeof CoverageRoute
   '/faqs': typeof FaqsRoute
   '/flight-booking': typeof FlightBookingRoute
@@ -379,11 +393,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
   '/book': typeof BookRoute
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/control-login': typeof ControlLoginRoute
   '/coverage': typeof CoverageRoute
   '/faqs': typeof FaqsRoute
   '/flight-booking': typeof FlightBookingRoute
@@ -429,11 +445,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
   '/book': typeof BookRoute
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/control-login': typeof ControlLoginRoute
   '/coverage': typeof CoverageRoute
   '/faqs': typeof FaqsRoute
   '/flight-booking': typeof FlightBookingRoute
@@ -481,11 +499,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin-login'
     | '/auth'
     | '/blog'
     | '/book'
     | '/careers'
     | '/contact'
+    | '/control-login'
     | '/coverage'
     | '/faqs'
     | '/flight-booking'
@@ -531,11 +551,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/admin-login'
     | '/auth'
     | '/blog'
     | '/book'
     | '/careers'
     | '/contact'
+    | '/control-login'
     | '/coverage'
     | '/faqs'
     | '/flight-booking'
@@ -580,11 +602,13 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/about'
+    | '/admin-login'
     | '/auth'
     | '/blog'
     | '/book'
     | '/careers'
     | '/contact'
+    | '/control-login'
     | '/coverage'
     | '/faqs'
     | '/flight-booking'
@@ -632,11 +656,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   AuthRoute: typeof AuthRouteWithChildren
   BlogRoute: typeof BlogRoute
   BookRoute: typeof BookRoute
   CareersRoute: typeof CareersRoute
   ContactRoute: typeof ContactRoute
+  ControlLoginRoute: typeof ControlLoginRoute
   CoverageRoute: typeof CoverageRoute
   FaqsRoute: typeof FaqsRoute
   FlightBookingRoute: typeof FlightBookingRoute
@@ -672,6 +698,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-login': {
+      id: '/admin-login'
+      path: '/admin-login'
+      fullPath: '/admin-login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -705,6 +738,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/control-login': {
+      id: '/control-login'
+      path: '/control-login'
+      fullPath: '/control-login'
+      preLoaderRoute: typeof ControlLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coverage': {
@@ -1103,11 +1143,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
+  AdminLoginRoute: AdminLoginRoute,
   AuthRoute: AuthRouteWithChildren,
   BlogRoute: BlogRoute,
   BookRoute: BookRoute,
   CareersRoute: CareersRoute,
   ContactRoute: ContactRoute,
+  ControlLoginRoute: ControlLoginRoute,
   CoverageRoute: CoverageRoute,
   FaqsRoute: FaqsRoute,
   FlightBookingRoute: FlightBookingRoute,
