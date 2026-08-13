@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { authCallbackUrl } from "@/lib/site-url";
+import { getMyAccess } from "@/lib/admin.functions";
 import { z } from "zod";
 import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,9 +24,26 @@ export const Route = createFileRoute("/auth")({
 const emailSchema = z.string().trim().email("Enter a valid email address").max(255);
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters").max(72);
 
-function safeRedirect(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+function safeRedirect(value: string | null): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
   return value;
+}
+
+/**
+ * Where a signed-in account belongs. Sign-in previously always sent people to
+ * /dashboard, so an administrator or the owner landed in the customer portal.
+ * Destination is now decided by the account's own permissions.
+ */
+async function destinationForSession(): Promise<string> {
+  try {
+    const access = await getMyAccess();
+    const perms = access.permissions ?? [];
+    if (perms.includes("platform.manage")) return "/control";
+    if (perms.length > 0) return "/admin";
+  } catch {
+    // fall through to the customer portal
+  }
+  return "/dashboard";
 }
 
 function AuthPage() {
@@ -37,20 +55,29 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const next =
+  // An explicit ?redirect= wins (it is how a guard sends you back where you
+  // were); otherwise the destination follows the account's role.
+  const requested =
     typeof window !== "undefined"
       ? safeRedirect(new URLSearchParams(window.location.search).get("redirect"))
-      : "/dashboard";
+      : null;
 
   useEffect(() => {
+    let done = false;
+    async function route() {
+      if (done) return;
+      done = true;
+      const to = requested ?? (await destinationForSession());
+      void navigate({ to, replace: true });
+    }
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) void navigate({ to: next, replace: true });
+      if (session) void route();
     });
     void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void navigate({ to: next, replace: true });
+      if (data.session) void route();
     });
     return () => sub.subscription.unsubscribe();
-  }, [navigate, next]);
+  }, [navigate, requested]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -128,7 +155,7 @@ function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: authCallbackUrl(next) },
+        options: { redirectTo: authCallbackUrl(requested ?? undefined) },
       });
       if (error) throw error;
     } catch (error) {

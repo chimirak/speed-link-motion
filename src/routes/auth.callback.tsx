@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getMyAccess } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -75,7 +76,21 @@ function AuthCallback() {
       }
 
       const next = url.searchParams.get("next");
-      void navigate({ to: next && next.startsWith("/") ? next : "/dashboard", replace: true });
+      // Same rule as sign-in: an explicit next wins, otherwise route by role so
+      // an administrator or the owner is never dropped into the customer portal.
+      if (next && next.startsWith("/") && !next.startsWith("//")) {
+        void navigate({ to: next, replace: true });
+        return;
+      }
+      let to = "/dashboard";
+      try {
+        const perms = (await getMyAccess()).permissions ?? [];
+        if (perms.includes("platform.manage")) to = "/control";
+        else if (perms.length > 0) to = "/admin";
+      } catch {
+        // stay with the customer portal
+      }
+      if (!cancelled) void navigate({ to, replace: true });
     }
 
     void run();
